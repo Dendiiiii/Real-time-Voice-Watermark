@@ -1,0 +1,4 @@
+test:
+  model_path: "./results/ckpt/pth/"
+  model_name: False
+  index: -1
