@@ -259,7 +259,7 @@ class distortion(nn.Module):
         }
 
         x = x.clamp(-1, 1)
-        y = attack_choice[attack_choice](x)
+        y = attack_functions[attack_choice](x)
         y = y.clamp(-1, 1)
         return y
 
