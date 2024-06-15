@@ -17,6 +17,7 @@ import yaml
 from libs.modules import *
 from libs.modules.seanet import *
 from libs.modules.loss import Loss
+from libs.modules.segmentation import *
 from torch.optim import AdamW
 from itertools import chain
 import logging
@@ -104,6 +105,10 @@ def main(configs):
     show_circle = train_config["iter"]["show_circle"]
     lambda_e = train_config["optimize"]["lambda_e"]
     lambda_m = train_config["optimize"]["lambda_m"]
+    sample_rate = 16000
+    window_size = 1024
+    overlap_ratio = 0.2
+    bands = [(20, 300), (300, 3000), (3000, 20000)]
     global_step = 0
     train_len = len(audios_loader)
     for ep in range(1, epoch_num + 1):
@@ -117,6 +122,17 @@ def main(configs):
             # ------------------- generate watermark
             wav_matrix = sample['matrix'].to(device)
             watermarked_wav, wm = generator(wav_matrix)  # (B, C, L)
+
+            # List of signals from different bands segmentation
+            wav_band_signals = divide_signal_into_bands(wav_matrix, sample_rate, bands)
+            wm_band_signals = divide_signal_into_bands(wm, sample_rate, bands)
+
+
+            wav_segments = segment_signal(wav_band_signals, window_size, overlap_ratio)
+            wm_segments = segment_signal(wm_band_signals, window_size, overlap_ratio)
+
+
+
             prob, msg = detector.detect_watermark(watermarked_wav)
             losses = loss.en_de_loss(wav_matrix, watermarked_wav, wm, prob)
             if global_step < prev_step:

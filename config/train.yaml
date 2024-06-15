@@ -34,7 +34,7 @@ optimize:
 
 
 iter:
-  epoch: 10
+  epoch: 3
   save_circle: 5
   show_circle: 5
   val_circle: 5
