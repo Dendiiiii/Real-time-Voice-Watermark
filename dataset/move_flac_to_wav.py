@@ -1,16 +1,15 @@
 import os
-import shutil
 import re
 import torchaudio
 
 
 pattern = '.flac'
-root = r"LibriSpeech/train-clean-100"
-root2 = r"LibriSpeech/test-clean"
-root3 = r"LibriSpeech/dev-clean"
-aim_path = r"LibriSpeech_wav/train"
-aim_path2 = r"LibriSpeech_wav/test"
-aim_path3 = r"LibriSpeech_wav/val"
+root = r"/storage/seit-guohanqi/librispeech_dataset/LibriSpeech/train-clean-100"
+root2 = r"/storage/seit-guohanqi/librispeech_dataset/LibriSpeech/test-clean"
+root3 = r"/storage/seit-guohanqi/librispeech_dataset/LibriSpeech/dev-clean"
+aim_path = r"/storage/seit-guohanqi/librispeech_dataset/LibriSpeech_wav/train"
+aim_path2 = r"/storage/seit-guohanqi/librispeech_dataset/LibriSpeech_wav/test"
+aim_path3 = r"/storage/seit-guohanqi/librispeech_dataset/LibriSpeech_wav/val"
 
 if not os.path.exists(aim_path):os.makedirs(aim_path)
 if not os.path.exists(aim_path2):os.makedirs(aim_path2)
