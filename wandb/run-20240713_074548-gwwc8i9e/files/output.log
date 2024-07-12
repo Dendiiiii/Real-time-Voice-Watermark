@@ -1,0 +1,25 @@
+####################	Begin Training	####################
+Epoch 1/1
+D:\Anaconda\lib\site-packages\torch\functional.py:665: UserWarning: stft with return_complex=False is deprecated. In a future pytorch release, stft will return complex tensors for all inputs, and return_complex=False will raise an error.
+Note: you can still call torch.view_as_real on the complex output to recover the old return format. (Triggered internally at ..\aten\src\ATen\native\SpectralOps.cpp:878.)
+  return _VF.stft(input, n_fft, hop_length, win_length, window,  # type: ignore[attr-defined]
+----------------------------------------------------------------------------------------------------
+training_step:1 - loudness_loss:19.10932541 - binary_cross_entropy_loss:0.90702480
+----------------------------------------------------------------------------------------------------
+training_step:2 - loudness_loss:20.42880630 - binary_cross_entropy_loss:0.63798463
+----------------------------------------------------------------------------------------------------
+training_step:3 - loudness_loss:18.55499458 - binary_cross_entropy_loss:0.63798308
+----------------------------------------------------------------------------------------------------
+training_step:4 - loudness_loss:24.46047592 - binary_cross_entropy_loss:0.63798070
+----------------------------------------------------------------------------------------------------
+training_step:5 - loudness_loss:22.33028793 - binary_cross_entropy_loss:0.90694296
+----------------------------------------------------------------------------------------------------
+training_step:6 - loudness_loss:25.69324112 - binary_cross_entropy_loss:0.63798004
+----------------------------------------------------------------------------------------------------
+training_step:7 - loudness_loss:24.14124680 - binary_cross_entropy_loss:0.63798290
+----------------------------------------------------------------------------------------------------
+training_step:8 - loudness_loss:25.09767532 - binary_cross_entropy_loss:0.90691656
+----------------------------------------------------------------------------------------------------
+training_step:9 - loudness_loss:23.28570175 - binary_cross_entropy_loss:0.63798338
+----------------------------------------------------------------------------------------------------
+training_step:10 - loudness_loss:24.49635887 - binary_cross_entropy_loss:0.90691745

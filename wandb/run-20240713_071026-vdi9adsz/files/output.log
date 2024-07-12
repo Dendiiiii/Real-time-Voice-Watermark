@@ -1,0 +1,104 @@
+####################	Begin Training	####################
+Epoch 1/1
+D:\Anaconda\lib\site-packages\torch\functional.py:665: UserWarning: stft with return_complex=False is deprecated. In a future pytorch release, stft will return complex tensors for all inputs, and return_complex=False will raise an error.
+Note: you can still call torch.view_as_real on the complex output to recover the old return format. (Triggered internally at ..\aten\src\ATen\native\SpectralOps.cpp:878.)
+  return _VF.stft(input, n_fft, hop_length, win_length, window,  # type: ignore[attr-defined]
+----------------------------------------------------------------------------------------------------
+training_step:1 - loudness_loss:19.10932541 - binary_cross_entropy_loss:0.90702480
+----------------------------------------------------------------------------------------------------
+training_step:2 - loudness_loss:20.43485641 - binary_cross_entropy_loss:0.63798463
+----------------------------------------------------------------------------------------------------
+training_step:3 - loudness_loss:18.64820290 - binary_cross_entropy_loss:0.63798308
+----------------------------------------------------------------------------------------------------
+training_step:4 - loudness_loss:24.47289467 - binary_cross_entropy_loss:0.63798070
+----------------------------------------------------------------------------------------------------
+training_step:5 - loudness_loss:22.56558037 - binary_cross_entropy_loss:0.90694296
+----------------------------------------------------------------------------------------------------
+training_step:6 - loudness_loss:26.05040359 - binary_cross_entropy_loss:0.63798004
+----------------------------------------------------------------------------------------------------
+training_step:7 - loudness_loss:24.76173782 - binary_cross_entropy_loss:0.63798290
+----------------------------------------------------------------------------------------------------
+training_step:8 - loudness_loss:25.65375710 - binary_cross_entropy_loss:0.90691656
+----------------------------------------------------------------------------------------------------
+training_step:9 - loudness_loss:23.47957611 - binary_cross_entropy_loss:0.63798338
+----------------------------------------------------------------------------------------------------
+training_step:10 - loudness_loss:25.08239365 - binary_cross_entropy_loss:0.90691745
+----------------------------------------------------------------------------------------------------
+training_step:11 - loudness_loss:24.72987366 - binary_cross_entropy_loss:0.90688306
+----------------------------------------------------------------------------------------------------
+training_step:12 - loudness_loss:22.90679932 - binary_cross_entropy_loss:0.63797939
+----------------------------------------------------------------------------------------------------
+training_step:13 - loudness_loss:21.43952370 - binary_cross_entropy_loss:0.63797748
+----------------------------------------------------------------------------------------------------
+training_step:14 - loudness_loss:25.22366714 - binary_cross_entropy_loss:0.63797718
+----------------------------------------------------------------------------------------------------
+training_step:15 - loudness_loss:28.78998947 - binary_cross_entropy_loss:1.17572415
+----------------------------------------------------------------------------------------------------
+training_step:16 - loudness_loss:21.13426399 - binary_cross_entropy_loss:0.63797534
+----------------------------------------------------------------------------------------------------
+training_step:17 - loudness_loss:21.34109116 - binary_cross_entropy_loss:0.63797677
+----------------------------------------------------------------------------------------------------
+training_step:18 - loudness_loss:24.51250648 - binary_cross_entropy_loss:1.17566359
+----------------------------------------------------------------------------------------------------
+training_step:19 - loudness_loss:24.07352066 - binary_cross_entropy_loss:0.90684265
+----------------------------------------------------------------------------------------------------
+training_step:20 - loudness_loss:20.50081062 - binary_cross_entropy_loss:0.90679079
+----------------------------------------------------------------------------------------------------
+training_step:21 - loudness_loss:23.77566338 - binary_cross_entropy_loss:0.36915717
+----------------------------------------------------------------------------------------------------
+training_step:22 - loudness_loss:19.63653183 - binary_cross_entropy_loss:1.17560267
+----------------------------------------------------------------------------------------------------
+training_step:23 - loudness_loss:20.55599594 - binary_cross_entropy_loss:0.90678358
+----------------------------------------------------------------------------------------------------
+training_step:24 - loudness_loss:23.73604774 - binary_cross_entropy_loss:0.63797057
+----------------------------------------------------------------------------------------------------
+training_step:25 - loudness_loss:25.98476601 - binary_cross_entropy_loss:1.17554033
+----------------------------------------------------------------------------------------------------
+training_step:26 - loudness_loss:26.59651566 - binary_cross_entropy_loss:0.90674913
+----------------------------------------------------------------------------------------------------
+training_step:27 - loudness_loss:24.80810165 - binary_cross_entropy_loss:0.36919093
+----------------------------------------------------------------------------------------------------
+training_step:28 - loudness_loss:18.47360039 - binary_cross_entropy_loss:0.63796502
+----------------------------------------------------------------------------------------------------
+training_step:29 - loudness_loss:20.03071785 - binary_cross_entropy_loss:1.17549896
+----------------------------------------------------------------------------------------------------
+training_step:30 - loudness_loss:19.65695763 - binary_cross_entropy_loss:0.36921248
+----------------------------------------------------------------------------------------------------
+training_step:31 - loudness_loss:17.61357307 - binary_cross_entropy_loss:0.90670979
+----------------------------------------------------------------------------------------------------
+training_step:32 - loudness_loss:24.11092186 - binary_cross_entropy_loss:0.90668339
+----------------------------------------------------------------------------------------------------
+training_step:33 - loudness_loss:24.17500496 - binary_cross_entropy_loss:0.63796538
+----------------------------------------------------------------------------------------------------
+training_step:34 - loudness_loss:22.40865707 - binary_cross_entropy_loss:0.90668309
+----------------------------------------------------------------------------------------------------
+training_step:35 - loudness_loss:22.53142166 - binary_cross_entropy_loss:1.17538965
+----------------------------------------------------------------------------------------------------
+training_step:36 - loudness_loss:24.23162842 - binary_cross_entropy_loss:0.63796175
+----------------------------------------------------------------------------------------------------
+training_step:37 - loudness_loss:24.00062943 - binary_cross_entropy_loss:1.17530823
+----------------------------------------------------------------------------------------------------
+training_step:38 - loudness_loss:25.07562637 - binary_cross_entropy_loss:0.63795984
+----------------------------------------------------------------------------------------------------
+training_step:39 - loudness_loss:25.60516739 - binary_cross_entropy_loss:0.63795590
+----------------------------------------------------------------------------------------------------
+training_step:40 - loudness_loss:22.04176712 - binary_cross_entropy_loss:0.63795799
+----------------------------------------------------------------------------------------------------
+training_step:41 - loudness_loss:23.07399368 - binary_cross_entropy_loss:0.90660375
+----------------------------------------------------------------------------------------------------
+training_step:42 - loudness_loss:21.70228386 - binary_cross_entropy_loss:1.17527556
+----------------------------------------------------------------------------------------------------
+training_step:43 - loudness_loss:26.17699051 - binary_cross_entropy_loss:0.63795668
+Traceback (most recent call last):
+  File "D:\Real-time vocie watermark\training.py", line 195, in <module>
+    main(configs)
+  File "D:\Real-time vocie watermark\training.py", line 136, in main
+    sum_loss.backward()
+  File "D:\Anaconda\lib\site-packages\torch\_tensor.py", line 525, in backward
+    torch.autograd.backward(
+  File "D:\Anaconda\lib\site-packages\torch\autograd\__init__.py", line 267, in backward
+    _engine_run_backward(
+  File "D:\Anaconda\lib\site-packages\torch\autograd\graph.py", line 744, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+KeyboardInterrupt
+Working... ----------                                27% 0:12:04

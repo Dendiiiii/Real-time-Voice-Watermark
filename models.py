@@ -1,12 +1,7 @@
 import logging
 from typing import Optional, Tuple
-import torch.nn.functional as F
-import numpy as np
-
 from torch import Tensor
-from torch.nn import CTCLoss
 import julius
-import torch
 from libs.modules.seanet import *
 
 logger = logging.getLogger("VoiceWatermark")
@@ -86,37 +81,10 @@ class WatermarkModel(torch.nn.Module):
                 dim=1) + 1e-9
         return actual_watermark_wav
 
-    # def pad_w_zeros_stft(
-    #     self,
-    #     x: torch.Tensor,
-    #     watermark_fft: torch.Tensor
-    # ) -> torch.Tensor:
-    #     if not self.future:
-    #         # [b, 2, freq_bins, time_frames]
-    #         zeros = torch.zeros(x.size(0), x.size(1), x.size(2),
-    #                             x.size(3) - watermark_fft.size(3) - 204).to(x.device)
-    #         actual_watermark_fft = torch.cat([torch.zeros(x.size(0), 2, 161, 204).to(x.device), watermark_fft, zeros],
-    #                                      dim=3) + 1e-9
-    #     else:
-    #         # [b, 2, freq_bins, time_frames]
-    #         zeros = torch.zeros(x.size(0), x.size(1), x.size(2),
-    #                             x.size(3) - watermark_fft.size(3) - (204 + self.future_ts)).to(x.device)
-    #         actual_watermark_fft = torch.cat(
-    #             [torch.zeros(x.size(0), 2, 161, (204 + self.future_ts)).to(x.device), watermark_fft, zeros],
-    #             dim=3) + 1e-9
-    #
-    #     return actual_watermark_fft
-
     def stft(self, x):
         window = torch.hann_window(self.n_fft).to(x.device)
         tmp = torch.stft(x, n_fft=self.n_fft, hop_length=self.hop_length, window=window, return_complex=True)
         tmp = torch.view_as_real(tmp)
-        # [b, freq_bins, time_frames, 2]  [3, 161, 1379, 2]
-        # time_frames = (samples(length)-frame_size)/hop_length + 1 = (220611 - 320)/160 + 1 = 1377.8
-        # (8000-320)/160 + 1 = 49
-        # freq_bins = (320/2)+1
-        # 2s time_frame is 199
-        # 0.5s time_frame is 49
         return tmp
 
     def forward(
@@ -137,38 +105,18 @@ class WatermarkModel(torch.nn.Module):
         if int((x_spect.size(-1) - (204+self.future_ts)) / 51) > 0:
             for i in range(int((x_spect.size(-1) - (204+self.future_ts)) / 51)):
                 out = self.get_watermark(x_spect[:, :, :, i*51:204+i*51], sample_rate=sample_rate)
-                # i = 0 x[:, :, 0:204]
-                # i = 1 x[:, :, 51:204+51]
                 list_of_watermark.append(out)
 
         if len(list_of_watermark) > 0:
             watermark_wav = torch.cat(list_of_watermark, dim=2)[:, 0, :]  # squzze out the extra 1 dimension
             all_watermark_wav = self.power*torch.max(torch.abs(x), dim=1)[0].unsqueeze(1) * watermark_wav
-            # all_watermark_fft = torch.stft(all_watermark_wav, n_fft=320, win_length=320, hop_length=int(16000, 0.01))
-            # all_watermark_fft = all_watermark_fft.permute(0, 3, 1, 2)
-            # actual_watermark_fft = self.pad_w_zeros_stft(x, all_watermark_fft)
-
             actual_watermark_wav = self.pad_w_zeros(x, all_watermark_wav)
             mask = x != 0
             wm = actual_watermark_wav*mask + 0.0000001
-            # wm = self.get_watermark(x, sample_rate=sample_rate)
             return x + alpha * wm, alpha * wm
 
         else:
             return None
-
-    # def training_step(self, batch, batch_idx, wmdetector: torch.nn.Module):
-    #     inputs, labels = batch
-    #     output = wmdetector(self.forward(inputs))
-    #
-    #     if output is not None:
-    #         ce_loss = self.CEloss(output, labels)
-    #     else:
-    #         return {"loss": torch.Tensor([0.0])}
-    #
-    #     if self.wandb:
-    #         self.log('Cross entropy loss', ce_loss, on_step=True, sync_dist=True)
-    #     return {"loss": ce_loss}
 
 
 class WatermarkDetector(torch.nn.Module):
@@ -189,23 +137,8 @@ class WatermarkDetector(torch.nn.Module):
         self.n_fft = n_fft
         self.hop_length = hop_length
         self.nbits = nbits
-        last_layer = nn.Conv1d(detector.ch1, 2, 1)
+        last_layer = nn.Conv1d(2, 2, 1)
         self.detector = torch.nn.Sequential(detector, last_layer)
-
-    def stft(self, x):
-        window = torch.hann_window(self.n_fft).to(x.device)
-        tmp = torch.stft(x, n_fft=self.n_fft, hop_length=self.hop_length, window=window, return_complex=True)
-        tmp = torch.view_as_real(tmp)
-        # [b, freq_bins, time_frames, 2]  [3, 161, 1379, 2]
-        # time_frames = (samples(length) - frame_size) / hop_length + 1 = (220611 - 320)/160 + 1 = 1377.8
-
-        # (8000-320)/160 + 1 = 49
-        # freq_bins = (320/2)+1
-        # 2s time_frame is 199
-        # 0.5s time_frame is 49
-        # 50 milliseconds = 0.05s = (800 - 320) / 160 + 1 = 4
-        # 2.05 = 204 frames
-        return tmp
 
     def detect_watermark(
         self,
@@ -252,9 +185,7 @@ class WatermarkDetector(torch.nn.Module):
         if sample_rate != 16000:
             x = julius.resample_frac(x, old_sr=sample_rate, new_sr=16000)
 
-        x_spect = self.stft(x).permute(0, 3, 1, 2)  # [b, freq_bins, time_frames, 2] -> [b, 2, freq_bins, time_frames]
-        result = self.detector(x_spect=x_spect, x=x)  # b x 2+nbits x length
-        print("result shape:", result.size())
+        result = self.detector(x)  # b x 2+nbits x length
         result[:, :2, :] = torch.softmax(result[:, :2, :], dim=1)  # Apply softmax
         return result[:, :2, :], torch.Tensor([0])
 

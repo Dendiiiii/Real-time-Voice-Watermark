@@ -1,6 +1,8 @@
 import json
 import os
 import shutil
+import wandb
+from torch.utils.tensorboard import SummaryWriter
 
 from models import WatermarkModel, WatermarkDetector
 from hydra.utils import to_absolute_path
@@ -10,12 +12,10 @@ import datetime
 from rich.progress import track
 from torch.utils.data import DataLoader
 from dataset.data import collate_fn, wav_dataset as my_dataset
-# from dataset.data import collate_fn, oned_dataset as my_dataset
 
 from Distortions import *
 from models import *
 import yaml
-from libs.modules import *
 from libs.modules.seanet import *
 from libs.modules.loss import Loss
 from libs.modules.segmentation import *
@@ -48,33 +48,12 @@ def main(configs):
     assert batch_size < len(audios)
     audios_loader = DataLoader(audios, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
     val_audios_loader = DataLoader(val_audios, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
-    # audios_loader = DataLoader(audios, batch_size=batch_size, shuffle=True)
-    # val_audios_loader = DataLoader(val_audios, batch_size=batch_size, shuffle=False)
-
-    # ------------------- build model
-    # channels = model_config["dim"]["channels"]
-    # dimension = model_config["dim"]["dimension"]
-    # n_filters = model_config["dim"]["filters"]
-    # n_residual_layers = model_config["layers"]["n_residual_layers"]
-    # ratios = model_config["layers"]["ratios"]
-    # activation = model_config["activation"]["act"]
-    # activation_params = model_config["activation"]["params"]
-    # norm = model_config["normalization"]["norm"]
-    # norm_params = model_config["normalization"]["norm_params"]
-    # kernel_size = model_config["dim"]["kernel_size"]
-    # last_kernel_size = model_config["dim"]["last_kernel_size"]
-    # residual_layer_size = model_config["dim"]["residual_layer_size"]
-    # dilation_base = model_config["dim"]["dilation_base"]
-    # causal = model_config["dim"]["causal"]
-    # pad_mode = model_config["dim"]["pad_mode"]
-    # true_skip = model_config["dim"]["true_skip"]
-    # compress = model_config["dim"]["compress"]
-    # lstm = model_config["dim"]["lstm"]
-    # disable_norm_outer_blocks = model_config["dim"]["disable_norm_outer_blocks"]
-    # trim_right_ratio = model_config["dim"]["trim_right_ratio"]
-
-    # encoder = SEANetEncoder()
-    # decoder = SEANetDecoder()
+    wandb.require("core")
+    wandb.init(project="real-time-voice-watermark", name='experiment_2', config={
+        "learning_rate": train_config["optimize"]["lr"],
+        "dataset": "LibriSpeech",
+        "epochs": train_config["iter"]["epoch"],
+    })
 
     encoder = SimpleEncoder()
     decoder = SimpleDecoder()
@@ -100,8 +79,11 @@ def main(configs):
         os.makedirs(p, exist_ok=True)
     train_log_path = os.path.join(train_config["path"]["log_path"], "train")
     val_log_path = os.path.join(train_config["path"]["log_path"], "val")
+    # wandb_path = os.path.join(train_config["path"]["log_path"], "learning_rate_"+train_config["optimize"]["lr"])
+
     os.makedirs(train_log_path, exist_ok=True)
     os.makedirs(val_log_path, exist_ok=True)
+    # os.makedirs(wandb_path, exist_ok=True)
 
     # ------------------- train
     logging.info(logging_mark + "\t" + "Begin Training" + "\t" + logging_mark)
@@ -110,20 +92,18 @@ def main(configs):
     show_circle = train_config["iter"]["show_circle"]
     lambda_e = train_config["optimize"]["lambda_e"]
     lambda_m = train_config["optimize"]["lambda_m"]
-    sample_rate = 16000
-    window_size = 1024
-    overlap_ratio = 0.2
-    bands = [(20, 300), (300, 3000), (3000, 20000)]
     global_step = 0
-    train_len = len(audios_loader)
     for ep in range(1, epoch_num + 1):
         generator.train()
         detector.train()
         step = 0
+        running_loudness_loss = 0.0
+        running_binary_cross_entropy_loss = 0.0
         logging.info("Epoch {}/{}".format(ep, epoch_num))
         for sample in track(audios_loader):
             global_step += 1
             step += 1
+            en_de_op.zero_grad()
             # ------------------- generate watermark
             wav_matrix = sample['matrix'].to(device)
 
@@ -133,32 +113,33 @@ def main(configs):
 
             # watermarked_wav  # Add random distortion
 
-            # List of signals from different bands segmentation
-            wav_band_signals = divide_signal_into_bands(wav_matrix, sample_rate, bands)
-            wm_band_signals = divide_signal_into_bands(wm, sample_rate, bands)
-
-            wav_segments = segment_signal(wav_band_signals, window_size, overlap_ratio)
-            wm_segments = segment_signal(wm_band_signals, window_size, overlap_ratio)
-
             masks = (torch.rand(watermarked_wav.size()[0]) < 0.5).to(device)
             detect_data = wav_matrix.clone()
             reshaped_masks = masks.unsqueeze(1).expand_as(detect_data)
             detect_data[reshaped_masks] = watermarked_wav[reshaped_masks]
 
             prob, msg = detector(detect_data)
-            losses = loss.en_de_loss(wav_matrix, watermarked_wav, wm, prob, reshaped_masks)
-            if global_step < prev_step:
-                sum_loss = lambda_m * losses[1]
-            else:
-                sum_loss = lambda_e * losses[0] + lambda_m * losses[1]
 
-            en_de_op.zero_grad()
+            losses = loss.en_de_loss(wav_matrix, watermarked_wav, wm, prob, reshaped_masks)
+
+            metrics = {"train/train_loudness_loss": losses[0],
+                       "train/train_binary_cross_entropy_loss": losses[1]}
+            wandb.log(metrics)
+
+            sum_loss = losses[0] + losses[1]
+
             sum_loss.backward()
             en_de_op.step()
 
+            running_loudness_loss += losses[0]
+            running_binary_cross_entropy_loss += losses[1]
+
             if step % show_circle == 0:
                 logging.info("-" * 100)
-                logging.info("training_step:{} - wav_loss:{:.8f} - acc:{:.8f}".format(step, losses[0], losses[1]))
+                logging.info("training_step:{} - loudness_loss:{:.8f} - binary_cross_entropy_loss:{:.8f}".format(step, losses[0], losses[1]))
+
+        train_loudness_loss = running_loudness_loss / len(audios_loader)
+        train_binary_cross_entropy_loss = running_binary_cross_entropy_loss / len(audios_loader)
 
         if ep % save_circle == 0:
             path = os.path.join(train_config["path"]["ckpt"], "pth")
@@ -195,8 +176,12 @@ def main(configs):
                 avg_acc += losses[1]
             avg_wav_loss /= count
             avg_acc /= count
+            val_metrics = {"val/val_loudness_loss": avg_wav_loss,
+                           "val/val_binary_cross_entropy_loss": avg_acc}
+            wandb.log(val_metrics)
             logging.info("#e" * 60)
-            logging.info("eval_epoch:{} - wav_loss:{:.8f} - acc_loss:{:.8f}".format(ep, avg_wav_loss, avg_acc))
+            logging.info("eval_epoch:{} - loudness_loss:{:.8f} - binary_cross_entropy_loss:{:.8f}".format(ep, avg_wav_loss, avg_acc))
+        wandb.finish()
 
 
 if __name__ == "__main__":

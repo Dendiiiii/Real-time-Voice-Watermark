@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "D:\Real-time vocie watermark\training.py", line 190, in <module>
+    main(configs)
+  File "D:\Real-time vocie watermark\training.py", line 82, in main
+    wandb_path = os.path.join(train_config["path"]["log_path"], "learning_rate_"+train_config["optimize"]["lr"])
+TypeError: can only concatenate str (not "float") to str

@@ -1,0 +1,28 @@
+2024-07-13 07:21:27,242 INFO    MainThread:13152 [wandb_setup.py:_flush():76] Current SDK version is 0.17.4
+2024-07-13 07:21:27,242 INFO    MainThread:13152 [wandb_setup.py:_flush():76] Configure stats pid to 13152
+2024-07-13 07:21:27,242 INFO    MainThread:13152 [wandb_setup.py:_flush():76] Loading settings from C:\Users\wenyi\.config\wandb\settings
+2024-07-13 07:21:27,242 INFO    MainThread:13152 [wandb_setup.py:_flush():76] Loading settings from D:\Real-time vocie watermark\wandb\settings
+2024-07-13 07:21:27,243 INFO    MainThread:13152 [wandb_setup.py:_flush():76] Loading settings from environment variables: {'_require_core': 'true'}
+2024-07-13 07:21:27,243 INFO    MainThread:13152 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2024-07-13 07:21:27,243 INFO    MainThread:13152 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'training.py', 'program_abspath': 'D:\\Real-time vocie watermark\\training.py', 'program': 'D:\\Real-time vocie watermark\\training.py'}
+2024-07-13 07:21:27,243 INFO    MainThread:13152 [wandb_setup.py:_flush():76] Applying login settings: {}
+2024-07-13 07:21:27,243 INFO    MainThread:13152 [wandb_init.py:_log_setup():529] Logging user logs to D:\Real-time vocie watermark\wandb\run-20240713_072127-zo9yoqaz\logs\debug.log
+2024-07-13 07:21:27,244 INFO    MainThread:13152 [wandb_init.py:_log_setup():530] Logging internal logs to D:\Real-time vocie watermark\wandb\run-20240713_072127-zo9yoqaz\logs\debug-internal.log
+2024-07-13 07:21:27,244 INFO    MainThread:13152 [wandb_init.py:init():569] calling init triggers
+2024-07-13 07:21:27,244 INFO    MainThread:13152 [wandb_init.py:init():576] wandb.init called with sweep_config: {}
+config: {'learning_rate': 2e-05, 'dataset': 'LibriSpeech', 'epochs': 1}
+2024-07-13 07:21:27,244 INFO    MainThread:13152 [wandb_init.py:init():619] starting backend
+2024-07-13 07:21:27,244 INFO    MainThread:13152 [wandb_init.py:init():623] setting up manager
+2024-07-13 07:21:27,247 INFO    MainThread:13152 [backend.py:_multiprocessing_setup():105] multiprocessing start_methods=spawn, using: spawn
+2024-07-13 07:21:27,251 INFO    MainThread:13152 [wandb_init.py:init():631] backend started and connected
+2024-07-13 07:21:27,256 INFO    MainThread:13152 [wandb_init.py:init():720] updated telemetry
+2024-07-13 07:21:32,083 INFO    MainThread:13152 [wandb_init.py:init():753] communicating run to backend with 90.0 second timeout
+2024-07-13 07:21:32,739 INFO    MainThread:13152 [wandb_run.py:_on_init():2402] communicating current version
+2024-07-13 07:21:32,741 INFO    MainThread:13152 [wandb_run.py:_on_init():2411] got version response 
+2024-07-13 07:21:32,741 INFO    MainThread:13152 [wandb_init.py:init():804] starting run threads in backend
+2024-07-13 07:21:33,717 INFO    MainThread:13152 [wandb_run.py:_console_start():2380] atexit reg
+2024-07-13 07:21:33,717 INFO    MainThread:13152 [wandb_run.py:_redirect():2235] redirect: wrap_raw
+2024-07-13 07:21:33,717 INFO    MainThread:13152 [wandb_run.py:_redirect():2300] Wrapping output streams.
+2024-07-13 07:21:33,717 INFO    MainThread:13152 [wandb_run.py:_redirect():2325] Redirects installed.
+2024-07-13 07:21:33,720 INFO    MainThread:13152 [wandb_init.py:init():847] run started, returning control to user process
+2024-07-13 07:24:51,725 WARNING MsgRouterThr:13152 [router.py:message_loop():77] message_loop has been closed

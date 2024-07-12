@@ -1,0 +1,32 @@
+{
+  "os":  "Windows-10-10.0.22000-SP0",
+  "python":  "3.10.9",
+  "startedAt":  "2024-07-12T23:45:48.031821Z",
+  "program":  "D:\\Real-time vocie watermark\\training.py",
+  "codePath":  "training.py",
+  "git":  {
+    "remote":  "https://github.com/Dendiiiii/Real-time-Voice-Watermark.git",
+    "commit":  "22dd19ad83a24da0011cc4dcc94fb9719b4680d2"
+  },
+  "email":  "yizhuwenus@gmail.com",
+  "root":  "D:\\Real-time vocie watermark",
+  "host":  "WEN",
+  "username":  "user_1",
+  "executable":  "D:\\Anaconda\\python.exe",
+  "codePathLocal":  "training.py",
+  "cpu_count":  8,
+  "cpu_count_logical":  16,
+  "disk":  {
+    "/":  {
+      "total":  "294973861888",
+      "used":  "61087744000"
+    }
+  },
+  "memory":  {
+    "total":  "14888460288"
+  },
+  "cpu":  {
+    "count":  8,
+    "countLogical":  16
+  }
+}

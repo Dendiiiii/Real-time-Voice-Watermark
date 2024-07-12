@@ -7,6 +7,9 @@ path:
   ckpt: "results/ckpt/"
   log_path: "results/log/"
 
+future_amt: 50
+future_amt_waveform: 8000
+
 watermark:
   length: 10
 
