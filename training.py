@@ -48,23 +48,23 @@ def main(configs):
     assert batch_size < len(audios)
     audios_loader = DataLoader(audios, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
     val_audios_loader = DataLoader(val_audios, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
-    wandb.require("core")
-    wandb.init(project="real-time-voice-watermark", name='experiment_2', config={
-        "learning_rate": train_config["optimize"]["lr"],
-        "dataset": "LibriSpeech",
-        "epochs": train_config["iter"]["epoch"],
-    })
+    # wandb.require("core")
+    # wandb.init(project="real-time-voice-watermark", name='experiment_2', config={
+    #     "learning_rate": train_config["optimize"]["lr"],
+    #     "dataset": "LibriSpeech",
+    #     "epochs": train_config["iter"]["epoch"],
+    # })
 
     encoder = SimpleEncoder()
     decoder = SimpleDecoder()
     detector = SimpleDetector()
 
-    generator = WatermarkModel(encoder=encoder, decoder=decoder).to(device)
-    detector = WatermarkDetector(detector=detector, nbits=0).to(device)
+    wm_generator = WatermarkModel(encoder=encoder, decoder=decoder).to(device)
+    wm_detector = WatermarkDetector(detector=detector, nbits=0).to(device)
 
     # ------------------- optimizer
     en_de_op = AdamW(
-        params=chain(generator.parameters(), detector.parameters()),
+        params=chain(wm_generator.parameters(), wm_detector.parameters()),
         betas=train_config["optimize"]["betas"],
         eps=train_config["optimize"]["eps"],
         weight_decay=train_config["optimize"]["weight_decay"],
@@ -94,8 +94,8 @@ def main(configs):
     lambda_m = train_config["optimize"]["lambda_m"]
     global_step = 0
     for ep in range(1, epoch_num + 1):
-        generator.train()
-        detector.train()
+        wm_generator.train()
+        wm_detector.train()
         step = 0
         running_loudness_loss = 0.0
         running_binary_cross_entropy_loss = 0.0
@@ -109,7 +109,7 @@ def main(configs):
 
             # wav_matrix  # Add random distortion, physical distortion type
 
-            watermarked_wav, wm = generator(wav_matrix)  # (B, L)
+            watermarked_wav, wm = wm_generator(wav_matrix)  # (B, L)
 
             # watermarked_wav  # Add random distortion
 
@@ -118,13 +118,13 @@ def main(configs):
             reshaped_masks = masks.unsqueeze(1).expand_as(detect_data)
             detect_data[reshaped_masks] = watermarked_wav[reshaped_masks]
 
-            prob, msg = detector(detect_data)
+            prob, msg = wm_detector(detect_data)
 
             losses = loss.en_de_loss(wav_matrix, watermarked_wav, wm, prob, reshaped_masks)
 
             metrics = {"train/train_loudness_loss": losses[0],
                        "train/train_binary_cross_entropy_loss": losses[1]}
-            wandb.log(metrics)
+            # wandb.log(metrics)
 
             sum_loss = losses[0] + losses[1]
 
@@ -144,10 +144,10 @@ def main(configs):
         if ep % save_circle == 0:
             path = os.path.join(train_config["path"]["ckpt"], "pth")
             torch.save({
-                "generator": generator.state_dict(),
-                "detector": detector.state_dict()
+                "generator": wm_generator.state_dict(),
+                "detector": wm_detector.state_dict()
             },
-                os.path.join(path, "none-" + generator.name + "_ep_{}_{}.pth.tar".format(ep,
+                os.path.join(path, "none-" + wm_generator.name + "_ep_{}_{}.pth.tar".format(ep,
                                                                                          datetime.datetime.now().strftime(
                                                                                              "%Y-%m_%d_%H_%M_%S")))
             )
@@ -155,8 +155,8 @@ def main(configs):
 
         # ------------------- validation stage
         with torch.no_grad():
-            generator.eval()
-            detector.eval()
+            wm_generator.eval()
+            wm_detector.eval()
             avg_wav_loss = 0
             avg_acc = 0
             count = 0
@@ -164,13 +164,13 @@ def main(configs):
                 count += 1
                 # ------------------- generate watermark
                 wav_matrix = sample["matrix"].to(device)
-                watermarked_wav, wm = generator(wav_matrix)
+                watermarked_wav, wm = wm_generator(wav_matrix)
 
                 masks = (torch.rand(watermarked_wav.size()[0]) < 0.5).to(device)
                 detect_data = wav_matrix.clone()
                 reshaped_masks = masks.view(-1, 1, 1).expand_as(detect_data)
                 detect_data[reshaped_masks] = watermarked_wav[reshaped_masks]
-                prob, msg = detector(detect_data)
+                prob, msg = wm_detector(detect_data)
                 losses = loss.en_de_loss(wav_matrix, watermarked_wav, wm, prob, reshaped_masks)
                 avg_wav_loss += losses[0]
                 avg_acc += losses[1]
@@ -178,10 +178,10 @@ def main(configs):
             avg_acc /= count
             val_metrics = {"val/val_loudness_loss": avg_wav_loss,
                            "val/val_binary_cross_entropy_loss": avg_acc}
-            wandb.log(val_metrics)
+            # wandb.log(val_metrics)
             logging.info("#e" * 60)
             logging.info("eval_epoch:{} - loudness_loss:{:.8f} - binary_cross_entropy_loss:{:.8f}".format(ep, avg_wav_loss, avg_acc))
-        wandb.finish()
+        # wandb.finish()
 
 
 if __name__ == "__main__":

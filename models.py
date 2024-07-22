@@ -53,8 +53,8 @@ class WatermarkModel(torch.nn.Module):
         assert sample_rate
         if sample_rate != 16000:
             x = julius.resample_frac(x, old_sr=sample_rate, new_sr=16000)
-
-        hidden = self.encoder(x).reshape(x.shape[0], 1, 512)
+        hidden_1 = self.encoder(x)
+        hidden = hidden_1.reshape(x.shape[0], 1, 512)
 
         watermark = self.decoder(hidden)
 
@@ -106,7 +106,11 @@ class WatermarkModel(torch.nn.Module):
             for i in range(int((x_spect.size(-1) - (204+self.future_ts)) / 51)):
                 out = self.get_watermark(x_spect[:, :, :, i*51:204+i*51], sample_rate=sample_rate)
                 list_of_watermark.append(out)
-
+                # 2.05s has 2.05*16000 = 32800 samples
+                # n_fft (frame_size) = 320
+                # hop_length = 160
+                # frames = (32800-320)/160 + 1 = 204 frames
+                # freq_bins = n_fft (frame_size) // 2 + 1 = 161
         if len(list_of_watermark) > 0:
             watermark_wav = torch.cat(list_of_watermark, dim=2)[:, 0, :]  # squzze out the extra 1 dimension
             all_watermark_wav = self.power*torch.max(torch.abs(x), dim=1)[0].unsqueeze(1) * watermark_wav
@@ -137,8 +141,8 @@ class WatermarkDetector(torch.nn.Module):
         self.n_fft = n_fft
         self.hop_length = hop_length
         self.nbits = nbits
-        last_layer = nn.Conv1d(2, 2, 1)
-        self.detector = torch.nn.Sequential(detector, last_layer)
+        last_layer = nn.Conv1d(1, 2, 1)
+        self.detector = nn.Sequential(detector, last_layer)
 
     def detect_watermark(
         self,
@@ -167,6 +171,12 @@ class WatermarkDetector(torch.nn.Module):
         message = torch.gt(message, message_threshold).int()
         return detect_prob, message
 
+    def stft(self, x):
+        window = torch.hann_window(self.n_fft).to(x.device)
+        tmp = torch.stft(x, n_fft=self.n_fft, hop_length=self.hop_length, window=window, return_complex=True)
+        tmp = torch.view_as_real(tmp)
+        return tmp
+
     def forward(
         self,
         x: torch.Tensor,
@@ -184,8 +194,10 @@ class WatermarkDetector(torch.nn.Module):
         assert sample_rate
         if sample_rate != 16000:
             x = julius.resample_frac(x, old_sr=sample_rate, new_sr=16000)
-
-        result = self.detector(x)  # b x 2+nbits x length
+        print('wav size', x.size())
+        x_spect = self.stft(x).permute(0, 3, 1, 2)
+        result = self.detector(x_spect)  # b x 2+nbits x length
+        print("detector result size: ", result.size())
         result[:, :2, :] = torch.softmax(result[:, :2, :], dim=1)  # Apply softmax
         return result[:, :2, :], torch.Tensor([0])
 

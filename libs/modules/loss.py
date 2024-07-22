@@ -65,6 +65,7 @@ class Loss(nn.Module):
         self.loudness_loss = TFLoudnessLoss(5, 400, 0.5, 16000)
 
     def en_de_loss(self, x, w_x, wm, prob, labels):
+        # 从小数点到db level做mse, regularizer
         bce_loss = self.bce_loss(prob[:, 0, :], labels.type(torch.float32))
         loudness_loss = self.loudness_loss(x, wm)
         return loudness_loss, bce_loss
