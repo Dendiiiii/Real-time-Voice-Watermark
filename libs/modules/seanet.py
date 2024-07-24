@@ -281,13 +281,9 @@ class SimpleDetector(SimpleEncoder):
         return tmp
 
     def forward(self, x):
-        orig_nframes = x.shape[-1]
-        print("detector input shapeL", x.size())
         x = self.model(x)
         x = self.detector(x)
-        print("detector before istft shape:", x.size())
-        print("istft input shape:", x[..., :orig_nframes].size())
-        x = self.istft(x[..., :orig_nframes]).unsqueeze(1)
+        x = self.istft(x).unsqueeze(1)
         return x
 
 

@@ -4,15 +4,15 @@ import torch.nn as nn
 import pdb
 import numpy as np
 import julius
-import kornia
+# import kornia
 
 
 SAMPLE_RATE = 22050
-device = torch.device("cudd:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class distortion(nn.Module):
-    def __init__(self, process_config):
+    def __init__(self):
         super(distortion, self).__init__()
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.resample_kernel_1 = julius.ResampleFrac(SAMPLE_RATE, 16000).to(self.device)
@@ -32,7 +32,7 @@ class distortion(nn.Module):
         if length > 18000:
             start = random.randint(0, 1000)
             end = random.randint(1, 1000)
-            y = x[:, :, start:0-end]
+            y = x[:, start:0-end]
         else:
             y = x
         return y
@@ -43,14 +43,14 @@ class distortion(nn.Module):
             cut_len = int(length * 0.1)  # cut 10% off  #length = 100, cut_len = 10
             start = random.randint(0, cut_len-1)  # start=8
             end = cut_len - start  # end = 10 - 8 = 2
-            y = x[:, :, start:0-end]  # x[:, :, 8:0-2] = x[:, :, 8:-2]
+            y = x[:, start:0-end]  # x[:, :, 8:0-2] = x[:, :, 8:-2]
         else:
             y = x
         return y
 
     def crop_front(self, x, cut_ratio=10):
         cut_len = int(x.shape[-1] * (cut_ratio/100))
-        ret = x[:, :, cut_len:]
+        ret = x[:, cut_len:]
         return ret
 
     def resample(self, x):
@@ -60,13 +60,13 @@ class distortion(nn.Module):
         cut_len = int(x.shape[-1] * (cut_ratio/100))
         begin = int((x.shape[-1] - cut_len) / 2)
         end = begin + cut_len
-        ret = torch.cat([x[:, :, :begin], x[:, :, end:]], dim=-1)
+        ret = torch.cat([x[:, :begin], x[:, end:]], dim=-1)
         return ret
 
     def crop_back(self, x, cut_ratio=10):
         cut_len = int(x.shape[-1] * (cut_ratio/100))
         begin = int((x.shape[-1] - cut_len))
-        ret = x[:, :, :begin]
+        ret = x[:, :begin]
         return ret
 
     def resample1(self, x):
@@ -81,7 +81,9 @@ class distortion(nn.Module):
         SNR = ratio
         mean = 0.
         RMS_s = torch.sqrt(torch.mean(y**2, dim=-1))
+        print("RMS_s", RMS_s.shape)
         RMS_n = torch.sqrt(RMS_s**2/(pow(10, SNR/20)))
+        print("RMS_n", RMS_s.shape)
         for i in range(y.shape[0]):
             noise = torch.normal(mean, float(RMS_n[i][0]), size=(1, y.shape[2]))
             if i == 0:
@@ -111,9 +113,9 @@ class distortion(nn.Module):
         y = y + (y2 - y).detach()
         return y
 
-    def medfilt(self, y, ratio=3):
-        y = kornia.filters.median_blur(y.unsqueeze(1), (1, ratio)).squeeze(1)
-        return y
+    # def medfilt(self, y, ratio=3):
+    #     y = kornia.filters.median_blur(y.unsqueeze(1), (1, ratio)).squeeze(1)
+    #     return y
 
     def low_band_pass(self, y):
         y = self.band_lowpass(y)
@@ -136,7 +138,8 @@ class distortion(nn.Module):
         spect, phase = self.stft.transform(y)
         _, fre_len, time_len = spect.shape
         cut_len = int(fre_len*(ratio/100))
-        spect = spect*(torch.cat([torch.zeros(_, cut_len, time_len), torch.ones(_, fre_len-cut_len, time_len)], dim=1).to(self.device))
+        spect = spect*(torch.cat([torch.zeros(_, cut_len, time_len), torch.ones(_, fre_len-cut_len, time_len)],
+                                 dim=1).to(self.device))
         return spect
 
     def crop_mel_back(self, y, ratio=50):
@@ -144,7 +147,8 @@ class distortion(nn.Module):
         spect, phase = self.stft.transform(y)
         _, fre_len, time_len = spect.shape
         cut_len = int(fre_len*(ratio*100))
-        spect = spect*(torch.cat([torch.ones(_, fre_len-cut_len, time_len), torch.zeros(_, cut_len, time_len)], dim=1).to(self.device))
+        spect = spect*(torch.cat([torch.ones(_, fre_len-cut_len, time_len), torch.zeros(_, cut_len, time_len)],
+                                 dim=1).to(self.device))
         return spect
 
     def crop_mel_wave_front(self, y, ratio=50):
@@ -152,7 +156,8 @@ class distortion(nn.Module):
         spect, phase = self.stft.transform(y)
         _, fre_len, time_len = spect.shape
         cut_len = int(fre_len*(ratio*100))
-        spect = spect*(torch.cat([torch.zeros(_, cut_len, time_len), torch.ones(_, fre_len-cut_len, time_len)], dim=1).to(self.device))
+        spect = spect*(torch.cat([torch.zeros(_, cut_len, time_len), torch.ones(_, fre_len-cut_len, time_len)],
+                                 dim=1).to(self.device))
         self.stft.num_samples = num_samples
         y = self.stft.inverse(spect.squeeze(1), phase.squeeze(1))
         return y
@@ -162,7 +167,8 @@ class distortion(nn.Module):
         spect, phase = self.stft.transform(y)
         _, fre_len, time_len = spect.shape
         cut_len = int(fre_len*(ratio*100))
-        spect = spect*(torch.cat([torch.ones(_, fre_len-cut_len, time_len), torch.zeors(_, cut_len, time_len)], dim=1).to(self.device))
+        spect = spect*(torch.cat([torch.ones(_, fre_len-cut_len, time_len), torch.zeors(_, cut_len, time_len)],
+                                 dim=1).to(self.device))
         self.stft.num_samples = num_samples
         y = self.stft.inverse(spect.squeeze(1), phase.squeeze(1))
         return y
@@ -232,7 +238,7 @@ class distortion(nn.Module):
             0: lambda x: self.none(x),
             1: lambda x: self.crop(x),
             2: lambda x: self.crop2(x),
-            3: lambda x: self.resampe(x),
+            3: lambda x: self.resample(x),
             4: lambda x: self.crop_front(x, ratio),       # Cropping front
             5: lambda x: self.crop_middle(x, ratio),      # Cropping middle
             6: lambda x: self.crop_back(x, ratio),        # Cropping behind
@@ -262,26 +268,3 @@ class distortion(nn.Module):
         y = attack_functions[attack_choice](x)
         y = y.clamp(-1, 1)
         return y
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

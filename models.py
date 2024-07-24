@@ -99,7 +99,6 @@ class WatermarkModel(torch.nn.Module):
             sample_rate = 16_000
 
         x_spect = self.stft(x).permute(0, 3, 1, 2)  # [b, freq_bins, time_frames, 2] -> [b, 2, freq_bins, time_frames]
-
         list_of_watermark = []
 
         if int((x_spect.size(-1) - (204+self.future_ts)) / 51) > 0:
@@ -194,10 +193,9 @@ class WatermarkDetector(torch.nn.Module):
         assert sample_rate
         if sample_rate != 16000:
             x = julius.resample_frac(x, old_sr=sample_rate, new_sr=16000)
-        print('wav size', x.size())
+        orig_length = x.shape[-1]
         x_spect = self.stft(x).permute(0, 3, 1, 2)
-        result = self.detector(x_spect)  # b x 2+nbits x length
-        print("detector result size: ", result.size())
+        result = self.detector(x_spect)[..., :orig_length]  # b x 2+nbits x length
         result[:, :2, :] = torch.softmax(result[:, :2, :], dim=1)  # Apply softmax
         return result[:, :2, :], torch.Tensor([0])
 

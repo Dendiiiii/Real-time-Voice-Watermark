@@ -2,10 +2,8 @@ import json
 import os
 import shutil
 import wandb
-from torch.utils.tensorboard import SummaryWriter
 
 from models import WatermarkModel, WatermarkDetector
-from hydra.utils import to_absolute_path
 import torch
 import numpy as np
 import datetime
@@ -13,7 +11,7 @@ from rich.progress import track
 from torch.utils.data import DataLoader
 from dataset.data import collate_fn, wav_dataset as my_dataset
 
-from Distortions import *
+from Distortions.distortions import *
 from models import *
 import yaml
 from libs.modules.seanet import *
@@ -29,7 +27,6 @@ random.seed(seed)
 np.random.seed(seed)
 torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)
-
 logging_mark = "#" * 20
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -58,6 +55,7 @@ def main(configs):
     encoder = SimpleEncoder()
     decoder = SimpleDecoder()
     detector = SimpleDetector()
+    distortions = distortion()
 
     wm_generator = WatermarkModel(encoder=encoder, decoder=decoder).to(device)
     wm_detector = WatermarkDetector(detector=detector, nbits=0).to(device)
@@ -106,12 +104,18 @@ def main(configs):
             en_de_op.zero_grad()
             # ------------------- generate watermark
             wav_matrix = sample['matrix'].to(device)
+            physcial_distortions = [4, 5, 6, 9]
+            all_distortions = [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 15]
 
             # wav_matrix  # Add random distortion, physical distortion type
+            if random.random() < 0.5:
+                wav_matrix = distortions(wav_matrix, random.choice(physcial_distortions))
 
             watermarked_wav, wm = wm_generator(wav_matrix)  # (B, L)
 
             # watermarked_wav  # Add random distortion
+            # if random.random() < 0.5:
+            #     watermarked_wav = distortions(watermarked_wav,  random.choice(all_distortions))
 
             masks = (torch.rand(watermarked_wav.size()[0]) < 0.5).to(device)
             detect_data = wav_matrix.clone()
@@ -165,10 +169,9 @@ def main(configs):
                 # ------------------- generate watermark
                 wav_matrix = sample["matrix"].to(device)
                 watermarked_wav, wm = wm_generator(wav_matrix)
-
                 masks = (torch.rand(watermarked_wav.size()[0]) < 0.5).to(device)
                 detect_data = wav_matrix.clone()
-                reshaped_masks = masks.view(-1, 1, 1).expand_as(detect_data)
+                reshaped_masks = masks.unsqueeze(1).expand_as(detect_data)
                 detect_data[reshaped_masks] = watermarked_wav[reshaped_masks]
                 prob, msg = wm_detector(detect_data)
                 losses = loss.en_de_loss(wav_matrix, watermarked_wav, wm, prob, reshaped_masks)
@@ -187,10 +190,10 @@ def main(configs):
 if __name__ == "__main__":
     # Read config
     process_config = yaml.load(
-        open(r'D:/Real-time vocie watermark/config/process.yaml', 'r'), Loader=yaml.FullLoader
+        open(r'D:/Real-time-Voice-Watermark/config/process.yaml', 'r'), Loader=yaml.FullLoader
     )
-    model_config = yaml.load(open(r'D:/Real-time vocie watermark/config/model.yaml', 'r'), Loader=yaml.FullLoader)
-    train_config = yaml.load(open(r'D:/Real-time vocie watermark/config/train.yaml', 'r'), Loader=yaml.FullLoader)
+    model_config = yaml.load(open(r'D:/Real-time-Voice-Watermark/config/model.yaml', 'r'), Loader=yaml.FullLoader)
+    train_config = yaml.load(open(r'D:/Real-time-Voice-Watermark/config/train.yaml', 'r'), Loader=yaml.FullLoader)
     configs = (process_config, model_config, train_config)
 
     main(configs)
