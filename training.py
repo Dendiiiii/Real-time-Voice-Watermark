@@ -49,7 +49,7 @@ def main(configs):
     audios_loader = DataLoader(audios, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
     val_audios_loader = DataLoader(val_audios, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
     wandb.login(key="9a11e5364efe3bb8fedb3741188ee0d714e942e2")
-    wandb.init(project="real-time-voice-watermark", name='3_epoch_test_1', config={
+    wandb.init(project="real-time-voice-watermark", name='full_run_20_epoch', config={
         "learning_rate": train_config["optimize"]["lr"],
         "dataset": "LibriSpeech",
         "epochs": train_config["iter"]["epoch"],
@@ -195,10 +195,10 @@ def main(configs):
 if __name__ == "__main__":
     # Read config
     process_config = yaml.load(
-        open(r'D:/Real-time-Voice-Watermark/config/process.yaml', 'r'), Loader=yaml.FullLoader
+        open(r'./config/process.yaml', 'r'), Loader=yaml.FullLoader
     )
-    model_config = yaml.load(open(r'D:/Real-time-Voice-Watermark/config/model.yaml', 'r'), Loader=yaml.FullLoader)
-    train_config = yaml.load(open(r'D:/Real-time-Voice-Watermark/config/train.yaml', 'r'), Loader=yaml.FullLoader)
+    model_config = yaml.load(open(r'./config/model.yaml', 'r'), Loader=yaml.FullLoader)
+    train_config = yaml.load(open(r'./config/train.yaml', 'r'), Loader=yaml.FullLoader)
     configs = (process_config, model_config, train_config)
 
     main(configs)
