@@ -6,6 +6,6 @@ audio:
   max_len: 176000
 
 mel:
-  n_fft: 1024
-  hop_length: 256
-  win_length: 1024
+  n_fft: 320
+  hop_length: 160
+  win_length: 320

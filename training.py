@@ -2,6 +2,9 @@ import json
 import os
 import shutil
 import wandb
+import librosa
+import torchaudio.transforms as T
+import matplotlib.pyplot as plt
 
 from models import WatermarkModel, WatermarkDetector
 import torch
@@ -45,13 +48,15 @@ def main(configs):
     assert batch_size < len(audios)
     audios_loader = DataLoader(audios, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
     val_audios_loader = DataLoader(val_audios, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
-    # wandb.require("core")
-    # wandb.init(project="real-time-voice-watermark", name='experiment_2', config={
-    #     "learning_rate": train_config["optimize"]["lr"],
-    #     "dataset": "LibriSpeech",
-    #     "epochs": train_config["iter"]["epoch"],
-    # })
-
+    wandb.login(key="9a11e5364efe3bb8fedb3741188ee0d714e942e2")
+    wandb.init(project="real-time-voice-watermark", name='3_epoch_test_1', config={
+        "learning_rate": train_config["optimize"]["lr"],
+        "dataset": "LibriSpeech",
+        "epochs": train_config["iter"]["epoch"],
+    })
+    table = wandb.Table(columns=['Original Mel Spectrogram'])
+    # table = wandb.Table(columns=['Original Mel Spectrogram', 'Watermarked Mel Spectrogram',
+    #                              'Original Audio', 'Watermarked Audio'])
     encoder = SimpleEncoder()
     decoder = SimpleDecoder()
     detector = SimpleDetector()
@@ -126,10 +131,6 @@ def main(configs):
 
             losses = loss.en_de_loss(wav_matrix, watermarked_wav, wm, prob, reshaped_masks)
 
-            metrics = {"train/train_loudness_loss": losses[0],
-                       "train/train_binary_cross_entropy_loss": losses[1]}
-            # wandb.log(metrics)
-
             sum_loss = losses[0] + losses[1]
 
             sum_loss.backward()
@@ -144,6 +145,8 @@ def main(configs):
 
         train_loudness_loss = running_loudness_loss / len(audios_loader)
         train_binary_cross_entropy_loss = running_binary_cross_entropy_loss / len(audios_loader)
+        train_metrics = {"train/train_loudness_loss": train_loudness_loss,
+                         "train/train_binary_cross_entropy_loss": train_binary_cross_entropy_loss}
 
         if ep % save_circle == 0:
             path = os.path.join(train_config["path"]["ckpt"], "pth")
@@ -181,10 +184,12 @@ def main(configs):
             avg_acc /= count
             val_metrics = {"val/val_loudness_loss": avg_wav_loss,
                            "val/val_binary_cross_entropy_loss": avg_acc}
-            # wandb.log(val_metrics)
+
+            wandb.log({**train_metrics, **val_metrics})
+            # table.add_data(fig)
             logging.info("#e" * 60)
             logging.info("eval_epoch:{} - loudness_loss:{:.8f} - binary_cross_entropy_loss:{:.8f}".format(ep, avg_wav_loss, avg_acc))
-        # wandb.finish()
+    wandb.finish()
 
 
 if __name__ == "__main__":

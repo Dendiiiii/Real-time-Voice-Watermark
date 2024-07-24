@@ -92,7 +92,7 @@ class WatermarkModel(torch.nn.Module):
         x: torch.Tensor,
         sample_rate: Optional[int] = 16000,
         alpha: float = 1.0
-    ) -> tuple[Tensor, Tensor] | None:
+    ):
         """Apply the watermarking to the audio signal x with a tune-down ratio (defaul 1.0)"""
         if sample_rate is None:
             logger.warning("No sample rate input, setting it to be 16khz")
