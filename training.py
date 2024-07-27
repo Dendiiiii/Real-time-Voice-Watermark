@@ -82,12 +82,12 @@ def main(configs):
     train_log_path = os.path.join(train_config["path"]["log_path"], "train")
     val_log_path = os.path.join(train_config["path"]["log_path"], "val")
     # wandb_path = os.path.join(train_config["path"]["log_path"], "learning_rate_"+train_config["optimize"]["lr"])
-    mel_spectrogram_path = train_config["path"]["mel_path"]
-    wm_mel_spectrogram_path = os.path.join(train_config["path"]["mel_path"], "wm")
+    # mel_spectrogram_path = train_config["path"]["mel_path"]
+    # wm_mel_spectrogram_path = os.path.join(train_config["path"]["mel_path"], "wm")
 
     os.makedirs(train_log_path, exist_ok=True)
     os.makedirs(val_log_path, exist_ok=True)
-    os.makedirs(mel_spectrogram_path, exist_ok=True)
+    # os.makedirs(mel_spectrogram_path, exist_ok=True)
     # os.makedirs(wandb_path, exist_ok=True)
 
     # ------------------- train
@@ -186,17 +186,18 @@ def main(configs):
             avg_acc /= count
             val_metrics = {"val/val_loudness_loss": avg_wav_loss,
                            "val/val_binary_cross_entropy_loss": avg_acc}
-	    mel_spec = librosa.feature.melspectrogram(wav_matrix[-1].numpy(), sr=16000)
-	    mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
-	    fig = plt.Figirue()
-	    ax = fig.add_subplot()
-	    ax.set_axis_off()
 
-	    librosa.display.specshow(mel_spec_db, y_axis="mel", x_axis="time", ax=ax)
-	    fig.savefit(mel_spectrogram_path)
-		
+            # mel_spec = librosa.feature.melspectrogram(wav_matrix[-1].numpy(), sr=16000)
+            # mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+            # fig = plt.Figure()
+            # ax = fig.add_subplot()
+            # ax.set_axis_off()
+            #
+            # librosa.display.specshow(mel_spec_db, y_axis="mel", x_axis="time", ax=ax)
+            # fig.savefig(mel_spectrogram_path)
+            # table.add_data(wandb.Image(mel_spectrogram_path))
+
             wandb.log({**train_metrics, **val_metrics})
-            table.add_data(wandb.Image(mel_spectrogram_path))
             logging.info("#e" * 60)
             logging.info("eval_epoch:{} - loudness_loss:{:.8f} - binary_cross_entropy_loss:{:.8f}".format(ep, avg_wav_loss, avg_acc))
     wandb.finish()
