@@ -1,0 +1,22 @@
+####################	Begin Training	####################
+Epoch 1/20
+Working... [90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[39m [35m  0%[39m [36m-:--:--
+Traceback (most recent call last):
+  File "/storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/training.py", line 203, in <module>
+    main(configs)
+  File "/storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/training.py", line 131, in main
+    losses = loss.en_de_loss(wav_matrix, watermarked_wav, wm, prob, reshaped_masks)
+  File "/storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/libs/modules/loss.py", line 70, in en_de_loss
+    loudness_loss = self.loudness_loss(x, wm)
+  File "/localscratch/guohanqi/anaconda3/envs/yizhu/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/localscratch/guohanqi/anaconda3/envs/yizhu/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/libs/modules/loss.py", line 31, in forward
+    loudness_watermark = self.calculate_loudness(segments_watermark)
+  File "/storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/libs/modules/loss.py", line 54, in calculate_loudness
+    energy = torch.mean(weighted_segments ** 2, dim=-1)
+  File "/localscratch/guohanqi/anaconda3/envs/yizhu/lib/python3.10/site-packages/torch/_tensor.py", line 40, in wrapped
+    return f(*args, **kwargs)
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 118.00 MiB. GPU  has a total capacity of 47.54 GiB of which 51.88 MiB is free. Including non-PyTorch memory, this process has 47.48 GiB memory in use. Of the allocated memory 46.69 GiB is allocated by PyTorch, and 478.65 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[?25h

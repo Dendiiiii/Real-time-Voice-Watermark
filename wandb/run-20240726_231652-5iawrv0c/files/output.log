@@ -1,0 +1,47 @@
+####################	Begin Training	####################
+Epoch 1/20
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Working... [91m━━━━╸[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[39m [35m 12%[39m [36m0:08:23
+Traceback (most recent call last):
+  File "/storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/training.py", line 203, in <module>
+    main(configs)
+  File "/storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/training.py", line 131, in main
+    losses = loss.en_de_loss(wav_matrix, watermarked_wav, wm, prob, reshaped_masks)
+  File "/storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/libs/modules/loss.py", line 70, in en_de_loss
+    loudness_loss = self.loudness_loss(x, wm)
+  File "/localscratch/guohanqi/anaconda3/envs/yizhu/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/localscratch/guohanqi/anaconda3/envs/yizhu/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/libs/modules/loss.py", line 22, in forward
+    band_watermark = torchaudio.functional.highpass_biquad(watermark, self.sample_rate, low_cut)
+  File "/localscratch/guohanqi/anaconda3/envs/yizhu/lib/python3.10/site-packages/torchaudio/functional/filtering.py", line 910, in highpass_biquad
+    cutoff_freq = torch.as_tensor(cutoff_freq, dtype=dtype, device=device)
+Working... [91m━━━━━[90m╺━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[39m [35m 13%[39m [36m0:08:10
+[?25h

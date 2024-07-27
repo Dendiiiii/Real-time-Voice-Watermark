@@ -3,7 +3,6 @@ import os
 import shutil
 import wandb
 import librosa
-import torchaudio.transforms as T
 import matplotlib.pyplot as plt
 
 from models import WatermarkModel, WatermarkDetector
@@ -32,7 +31,7 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)
 logging_mark = "#" * 20
 logging.basicConfig(level=logging.INFO, format="%(message)s")
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:4" if torch.cuda.is_available() else "cpu")
 
 
 def main(configs):
@@ -83,9 +82,12 @@ def main(configs):
     train_log_path = os.path.join(train_config["path"]["log_path"], "train")
     val_log_path = os.path.join(train_config["path"]["log_path"], "val")
     # wandb_path = os.path.join(train_config["path"]["log_path"], "learning_rate_"+train_config["optimize"]["lr"])
+    mel_spectrogram_path = train_config["path"]["mel_path"]
+    wm_mel_spectrogram_path = os.path.join(train_config["path"]["mel_path"], "wm")
 
     os.makedirs(train_log_path, exist_ok=True)
     os.makedirs(val_log_path, exist_ok=True)
+    os.makedirs(mel_spectrogram_path, exist_ok=True)
     # os.makedirs(wandb_path, exist_ok=True)
 
     # ------------------- train
@@ -109,7 +111,7 @@ def main(configs):
             en_de_op.zero_grad()
             # ------------------- generate watermark
             wav_matrix = sample['matrix'].to(device)
-            physcial_distortions = [4, 5, 6, 9]
+            physcial_distortions = [4, 5, 6]
             all_distortions = [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 15]
 
             # wav_matrix  # Add random distortion, physical distortion type
@@ -184,9 +186,17 @@ def main(configs):
             avg_acc /= count
             val_metrics = {"val/val_loudness_loss": avg_wav_loss,
                            "val/val_binary_cross_entropy_loss": avg_acc}
+	    mel_spec = librosa.feature.melspectrogram(wav_matrix[-1].numpy(), sr=16000)
+	    mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+	    fig = plt.Figirue()
+	    ax = fig.add_subplot()
+	    ax.set_axis_off()
 
+	    librosa.display.specshow(mel_spec_db, y_axis="mel", x_axis="time", ax=ax)
+	    fig.savefit(mel_spectrogram_path)
+		
             wandb.log({**train_metrics, **val_metrics})
-            # table.add_data(fig)
+            table.add_data(wandb.Image(mel_spectrogram_path))
             logging.info("#e" * 60)
             logging.info("eval_epoch:{} - loudness_loss:{:.8f} - binary_cross_entropy_loss:{:.8f}".format(ep, avg_wav_loss, avg_acc))
     wandb.finish()

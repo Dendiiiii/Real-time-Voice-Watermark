@@ -1,0 +1,195 @@
+2024-07-24 19:54:16,494 INFO    StreamThr :799531 [internal.py:wandb_internal():86] W&B internal server running at pid: 799531, started at: 2024-07-24 19:54:16.492952
+2024-07-24 19:54:16,497 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: status
+2024-07-24 19:54:16,501 INFO    WriterThread:799531 [datastore.py:open_for_write():87] open: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/run-gejv91ga.wandb
+2024-07-24 19:54:16,505 DEBUG   SenderThread:799531 [sender.py:send():379] send: header
+2024-07-24 19:54:16,506 DEBUG   SenderThread:799531 [sender.py:send():379] send: run
+2024-07-24 19:54:16,708 INFO    SenderThread:799531 [dir_watcher.py:__init__():211] watching files in: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files
+2024-07-24 19:54:16,708 INFO    SenderThread:799531 [sender.py:_start_run_threads():1124] run started: gejv91ga with start time 1721865256.491424
+2024-07-24 19:54:16,732 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: check_version
+2024-07-24 19:54:16,733 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: check_version
+2024-07-24 19:54:16,807 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: run_start
+2024-07-24 19:54:16,850 DEBUG   HandlerThread:799531 [system_info.py:__init__():26] System info init
+2024-07-24 19:54:16,850 DEBUG   HandlerThread:799531 [system_info.py:__init__():41] System info init done
+2024-07-24 19:54:16,850 INFO    HandlerThread:799531 [system_monitor.py:start():194] Starting system monitor
+2024-07-24 19:54:16,851 INFO    SystemMonitor:799531 [system_monitor.py:_start():158] Starting system asset monitoring threads
+2024-07-24 19:54:16,851 INFO    HandlerThread:799531 [system_monitor.py:probe():214] Collecting system info
+2024-07-24 19:54:16,852 INFO    SystemMonitor:799531 [interfaces.py:start():190] Started cpu monitoring
+2024-07-24 19:54:16,853 INFO    SystemMonitor:799531 [interfaces.py:start():190] Started disk monitoring
+2024-07-24 19:54:16,855 INFO    SystemMonitor:799531 [interfaces.py:start():190] Started gpu monitoring
+2024-07-24 19:54:16,858 INFO    SystemMonitor:799531 [interfaces.py:start():190] Started memory monitoring
+2024-07-24 19:54:16,860 INFO    SystemMonitor:799531 [interfaces.py:start():190] Started network monitoring
+2024-07-24 19:54:16,925 DEBUG   HandlerThread:799531 [system_info.py:probe():150] Probing system
+2024-07-24 19:54:16,928 DEBUG   HandlerThread:799531 [system_info.py:_probe_git():135] Probing git
+2024-07-24 19:54:16,938 DEBUG   HandlerThread:799531 [system_info.py:_probe_git():143] Probing git done
+2024-07-24 19:54:16,938 DEBUG   HandlerThread:799531 [system_info.py:probe():198] Probing system done
+2024-07-24 19:54:16,938 DEBUG   HandlerThread:799531 [system_monitor.py:probe():223] {'os': 'Linux-5.15.0-101-generic-x86_64-with-glibc2.35', 'python': '3.10.14', 'heartbeatAt': '2024-07-24T23:54:16.925905', 'startedAt': '2024-07-24T23:54:16.483959', 'docker': None, 'cuda': None, 'args': (), 'state': 'running', 'program': '/storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/training.py', 'codePathLocal': 'training.py', 'codePath': 'training.py', 'git': {'remote': 'https://github.com/Dendiiiii/Real-time-Voice-Watermark', 'commit': '301cb41504e4ead038b39217fdb93dde9cb8f910'}, 'email': None, 'root': '/storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark', 'host': 'otml-seit', 'username': 'guohanqi', 'executable': '/localscratch/guohanqi/anaconda3/envs/yizhu/bin/python', 'cpu_count': 40, 'cpu_count_logical': 80, 'cpu_freq': {'current': 2.1377999999999973, 'min': 800.0, 'max': 4000.0}, 'cpu_freq_per_core': [{'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 3.94, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 1.396, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 3.783, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 0.8, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 3.54, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}, {'current': 2.1, 'min': 800.0, 'max': 4000.0}], 'disk': {'/': {'total': 97.80852508544922, 'used': 30.11751937866211}}, 'gpu': 'NVIDIA RTX A6000', 'gpu_count': 8, 'gpu_devices': [{'name': 'NVIDIA RTX A6000', 'memory_total': 51527024640}, {'name': 'NVIDIA RTX A6000', 'memory_total': 51527024640}, {'name': 'NVIDIA RTX A6000', 'memory_total': 51527024640}, {'name': 'NVIDIA RTX A6000', 'memory_total': 51527024640}, {'name': 'NVIDIA RTX A6000', 'memory_total': 51527024640}, {'name': 'NVIDIA RTX A6000', 'memory_total': 51527024640}, {'name': 'NVIDIA RTX A6000', 'memory_total': 51527024640}, {'name': 'NVIDIA RTX A6000', 'memory_total': 51527024640}], 'memory': {'total': 376.53883361816406}}
+2024-07-24 19:54:16,938 INFO    HandlerThread:799531 [system_monitor.py:probe():224] Finished collecting system info
+2024-07-24 19:54:16,938 INFO    HandlerThread:799531 [system_monitor.py:probe():227] Publishing system info
+2024-07-24 19:54:16,938 DEBUG   HandlerThread:799531 [system_info.py:_save_conda():207] Saving list of conda packages installed into the current environment
+2024-07-24 19:54:17,713 INFO    Thread-12 :799531 [dir_watcher.py:_on_file_created():271] file/dir created: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/conda-environment.yaml
+2024-07-24 19:54:18,459 DEBUG   HandlerThread:799531 [system_info.py:_save_conda():222] Saving conda packages done
+2024-07-24 19:54:18,462 INFO    HandlerThread:799531 [system_monitor.py:probe():229] Finished publishing system info
+2024-07-24 19:54:18,467 DEBUG   SenderThread:799531 [sender.py:send():379] send: files
+2024-07-24 19:54:18,467 INFO    SenderThread:799531 [sender.py:_save_file():1390] saving file wandb-metadata.json with policy now
+2024-07-24 19:54:18,567 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: python_packages
+2024-07-24 19:54:18,568 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: stop_status
+2024-07-24 19:54:18,569 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: python_packages
+2024-07-24 19:54:18,570 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: stop_status
+2024-07-24 19:54:18,575 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: internal_messages
+2024-07-24 19:54:18,665 DEBUG   SenderThread:799531 [sender.py:send():379] send: telemetry
+2024-07-24 19:54:18,709 INFO    Thread-12 :799531 [dir_watcher.py:_on_file_modified():288] file/dir modified: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/conda-environment.yaml
+2024-07-24 19:54:18,710 INFO    Thread-12 :799531 [dir_watcher.py:_on_file_created():271] file/dir created: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/wandb-metadata.json
+2024-07-24 19:54:18,710 INFO    Thread-12 :799531 [dir_watcher.py:_on_file_created():271] file/dir created: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/requirements.txt
+2024-07-24 19:54:18,825 INFO    wandb-upload_0:799531 [upload_job.py:push():131] Uploaded file /tmp/tmpds3x0dvtwandb/u1fv6wwt-wandb-metadata.json
+2024-07-24 19:54:20,710 INFO    Thread-12 :799531 [dir_watcher.py:_on_file_created():271] file/dir created: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/output.log
+2024-07-24 19:54:21,590 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: status_report
+2024-07-24 19:54:22,711 INFO    Thread-12 :799531 [dir_watcher.py:_on_file_modified():288] file/dir modified: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/output.log
+2024-07-24 19:54:23,200 DEBUG   SenderThread:799531 [sender.py:send():379] send: exit
+2024-07-24 19:54:23,200 INFO    SenderThread:799531 [sender.py:send_exit():586] handling exit code: 1
+2024-07-24 19:54:23,201 INFO    SenderThread:799531 [sender.py:send_exit():588] handling runtime: 6
+2024-07-24 19:54:23,201 INFO    SenderThread:799531 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-07-24 19:54:23,202 INFO    SenderThread:799531 [sender.py:send_exit():594] send defer
+2024-07-24 19:54:23,202 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: defer
+2024-07-24 19:54:23,203 INFO    HandlerThread:799531 [handler.py:handle_request_defer():172] handle defer: 0
+2024-07-24 19:54:23,203 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: defer
+2024-07-24 19:54:23,203 INFO    SenderThread:799531 [sender.py:send_request_defer():610] handle sender defer: 0
+2024-07-24 19:54:23,203 INFO    SenderThread:799531 [sender.py:transition_state():614] send defer: 1
+2024-07-24 19:54:23,204 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: defer
+2024-07-24 19:54:23,204 INFO    HandlerThread:799531 [handler.py:handle_request_defer():172] handle defer: 1
+2024-07-24 19:54:23,204 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: defer
+2024-07-24 19:54:23,204 INFO    SenderThread:799531 [sender.py:send_request_defer():610] handle sender defer: 1
+2024-07-24 19:54:23,205 INFO    SenderThread:799531 [sender.py:transition_state():614] send defer: 2
+2024-07-24 19:54:23,205 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: defer
+2024-07-24 19:54:23,205 INFO    HandlerThread:799531 [handler.py:handle_request_defer():172] handle defer: 2
+2024-07-24 19:54:23,205 INFO    HandlerThread:799531 [system_monitor.py:finish():203] Stopping system monitor
+2024-07-24 19:54:23,205 DEBUG   SystemMonitor:799531 [system_monitor.py:_start():172] Starting system metrics aggregation loop
+2024-07-24 19:54:23,207 DEBUG   SystemMonitor:799531 [system_monitor.py:_start():179] Finished system metrics aggregation loop
+2024-07-24 19:54:23,207 DEBUG   SystemMonitor:799531 [system_monitor.py:_start():183] Publishing last batch of metrics
+2024-07-24 19:54:23,211 INFO    HandlerThread:799531 [interfaces.py:finish():202] Joined cpu monitor
+2024-07-24 19:54:23,211 INFO    HandlerThread:799531 [interfaces.py:finish():202] Joined disk monitor
+2024-07-24 19:54:23,712 INFO    Thread-12 :799531 [dir_watcher.py:_on_file_created():271] file/dir created: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/wandb-summary.json
+2024-07-24 19:54:24,285 INFO    HandlerThread:799531 [interfaces.py:finish():202] Joined gpu monitor
+2024-07-24 19:54:24,287 INFO    HandlerThread:799531 [interfaces.py:finish():202] Joined memory monitor
+2024-07-24 19:54:24,287 INFO    HandlerThread:799531 [interfaces.py:finish():202] Joined network monitor
+2024-07-24 19:54:24,288 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: poll_exit
+2024-07-24 19:54:24,290 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: defer
+2024-07-24 19:54:24,290 INFO    SenderThread:799531 [sender.py:send_request_defer():610] handle sender defer: 2
+2024-07-24 19:54:24,290 INFO    SenderThread:799531 [sender.py:transition_state():614] send defer: 3
+2024-07-24 19:54:24,291 DEBUG   SenderThread:799531 [sender.py:send():379] send: stats
+2024-07-24 19:54:24,291 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: defer
+2024-07-24 19:54:24,293 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: poll_exit
+2024-07-24 19:54:24,293 INFO    HandlerThread:799531 [handler.py:handle_request_defer():172] handle defer: 3
+2024-07-24 19:54:24,295 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: defer
+2024-07-24 19:54:24,295 INFO    SenderThread:799531 [sender.py:send_request_defer():610] handle sender defer: 3
+2024-07-24 19:54:24,295 INFO    SenderThread:799531 [sender.py:transition_state():614] send defer: 4
+2024-07-24 19:54:24,295 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: defer
+2024-07-24 19:54:24,295 INFO    HandlerThread:799531 [handler.py:handle_request_defer():172] handle defer: 4
+2024-07-24 19:54:24,296 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: defer
+2024-07-24 19:54:24,296 INFO    SenderThread:799531 [sender.py:send_request_defer():610] handle sender defer: 4
+2024-07-24 19:54:24,296 INFO    SenderThread:799531 [sender.py:transition_state():614] send defer: 5
+2024-07-24 19:54:24,296 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: defer
+2024-07-24 19:54:24,296 INFO    HandlerThread:799531 [handler.py:handle_request_defer():172] handle defer: 5
+2024-07-24 19:54:24,297 DEBUG   SenderThread:799531 [sender.py:send():379] send: summary
+2024-07-24 19:54:24,298 INFO    SenderThread:799531 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-07-24 19:54:24,299 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: defer
+2024-07-24 19:54:24,299 INFO    SenderThread:799531 [sender.py:send_request_defer():610] handle sender defer: 5
+2024-07-24 19:54:24,299 INFO    SenderThread:799531 [sender.py:transition_state():614] send defer: 6
+2024-07-24 19:54:24,299 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: defer
+2024-07-24 19:54:24,300 INFO    HandlerThread:799531 [handler.py:handle_request_defer():172] handle defer: 6
+2024-07-24 19:54:24,300 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: defer
+2024-07-24 19:54:24,300 INFO    SenderThread:799531 [sender.py:send_request_defer():610] handle sender defer: 6
+2024-07-24 19:54:24,306 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: status_report
+2024-07-24 19:54:24,382 INFO    SenderThread:799531 [sender.py:transition_state():614] send defer: 7
+2024-07-24 19:54:24,382 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: defer
+2024-07-24 19:54:24,382 INFO    HandlerThread:799531 [handler.py:handle_request_defer():172] handle defer: 7
+2024-07-24 19:54:24,383 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: defer
+2024-07-24 19:54:24,383 INFO    SenderThread:799531 [sender.py:send_request_defer():610] handle sender defer: 7
+2024-07-24 19:54:24,713 INFO    Thread-12 :799531 [dir_watcher.py:_on_file_modified():288] file/dir modified: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/wandb-summary.json
+2024-07-24 19:54:24,714 INFO    Thread-12 :799531 [dir_watcher.py:_on_file_modified():288] file/dir modified: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/output.log
+2024-07-24 19:54:24,715 INFO    Thread-12 :799531 [dir_watcher.py:_on_file_modified():288] file/dir modified: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/config.yaml
+2024-07-24 19:54:25,202 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: poll_exit
+2024-07-24 19:54:25,894 INFO    SenderThread:799531 [sender.py:transition_state():614] send defer: 8
+2024-07-24 19:54:25,895 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: poll_exit
+2024-07-24 19:54:25,895 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: defer
+2024-07-24 19:54:25,896 INFO    HandlerThread:799531 [handler.py:handle_request_defer():172] handle defer: 8
+2024-07-24 19:54:25,896 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: defer
+2024-07-24 19:54:25,896 INFO    SenderThread:799531 [sender.py:send_request_defer():610] handle sender defer: 8
+2024-07-24 19:54:25,897 INFO    SenderThread:799531 [job_builder.py:build():318] Attempting to build job artifact
+2024-07-24 19:54:25,898 INFO    SenderThread:799531 [job_builder.py:_get_source_type():455] is repo sourced job
+2024-07-24 19:54:25,944 INFO    SenderThread:799531 [job_builder.py:build():431] adding wandb-job metadata file
+2024-07-24 19:54:25,952 INFO    SenderThread:799531 [sender.py:transition_state():614] send defer: 9
+2024-07-24 19:54:25,953 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: defer
+2024-07-24 19:54:25,954 DEBUG   SenderThread:799531 [sender.py:send():379] send: artifact
+2024-07-24 19:54:25,954 INFO    HandlerThread:799531 [handler.py:handle_request_defer():172] handle defer: 9
+2024-07-24 19:54:26,206 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: poll_exit
+2024-07-24 19:54:26,392 INFO    wandb-upload_1:799531 [upload_job.py:push():89] Uploaded file /tmp/tmpjeyjf9hn/wandb-job.json
+2024-07-24 19:54:26,428 INFO    wandb-upload_0:799531 [upload_job.py:push():89] Uploaded file /home/guohanqi/.local/share/wandb/artifacts/staging/tmpil5c_cij
+2024-07-24 19:54:26,715 INFO    Thread-12 :799531 [dir_watcher.py:_on_file_modified():288] file/dir modified: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/output.log
+2024-07-24 19:54:27,018 INFO    SenderThread:799531 [sender.py:send_artifact():1468] sent artifact job-https___github.com_Dendiiiii_Real-time-Voice-Watermark_training.py - {'id': 'QXJ0aWZhY3Q6MTAzMjkyNjAyMw==', 'state': 'PENDING', 'artifactSequence': {'id': 'QXJ0aWZhY3RDb2xsZWN0aW9uOjMxODA0NTgyMA==', 'latestArtifact': {'id': 'QXJ0aWZhY3Q6MTAzMjcwMTg5NQ==', 'versionIndex': 4}}}
+2024-07-24 19:54:27,019 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: defer
+2024-07-24 19:54:27,019 INFO    SenderThread:799531 [sender.py:send_request_defer():610] handle sender defer: 9
+2024-07-24 19:54:27,019 INFO    SenderThread:799531 [dir_watcher.py:finish():358] shutting down directory watcher
+2024-07-24 19:54:27,716 INFO    SenderThread:799531 [dir_watcher.py:finish():388] scan: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files
+2024-07-24 19:54:27,717 INFO    SenderThread:799531 [dir_watcher.py:finish():402] scan save: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/config.yaml config.yaml
+2024-07-24 19:54:27,717 INFO    SenderThread:799531 [dir_watcher.py:finish():402] scan save: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/requirements.txt requirements.txt
+2024-07-24 19:54:27,718 INFO    SenderThread:799531 [dir_watcher.py:finish():402] scan save: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/output.log output.log
+2024-07-24 19:54:27,728 INFO    SenderThread:799531 [dir_watcher.py:finish():402] scan save: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/wandb-metadata.json wandb-metadata.json
+2024-07-24 19:54:27,728 INFO    SenderThread:799531 [dir_watcher.py:finish():402] scan save: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/conda-environment.yaml conda-environment.yaml
+2024-07-24 19:54:27,729 INFO    SenderThread:799531 [dir_watcher.py:finish():402] scan save: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/wandb-summary.json wandb-summary.json
+2024-07-24 19:54:27,730 INFO    SenderThread:799531 [sender.py:transition_state():614] send defer: 10
+2024-07-24 19:54:27,735 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: poll_exit
+2024-07-24 19:54:27,737 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: defer
+2024-07-24 19:54:27,742 INFO    HandlerThread:799531 [handler.py:handle_request_defer():172] handle defer: 10
+2024-07-24 19:54:27,743 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: defer
+2024-07-24 19:54:27,749 INFO    SenderThread:799531 [sender.py:send_request_defer():610] handle sender defer: 10
+2024-07-24 19:54:27,749 INFO    SenderThread:799531 [file_pusher.py:finish():172] shutting down file pusher
+2024-07-24 19:54:27,912 INFO    wandb-upload_1:799531 [upload_job.py:push():131] Uploaded file /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/config.yaml
+2024-07-24 19:54:27,983 INFO    wandb-upload_0:799531 [upload_job.py:push():131] Uploaded file /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/requirements.txt
+2024-07-24 19:54:27,997 INFO    wandb-upload_4:799531 [upload_job.py:push():131] Uploaded file /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/wandb-summary.json
+2024-07-24 19:54:27,997 INFO    wandb-upload_3:799531 [upload_job.py:push():131] Uploaded file /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/conda-environment.yaml
+2024-07-24 19:54:28,056 INFO    wandb-upload_2:799531 [upload_job.py:push():131] Uploaded file /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/files/output.log
+2024-07-24 19:54:28,209 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: poll_exit
+2024-07-24 19:54:28,209 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: poll_exit
+2024-07-24 19:54:28,257 INFO    Thread-11 (_thread_body):799531 [sender.py:transition_state():614] send defer: 11
+2024-07-24 19:54:28,257 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: defer
+2024-07-24 19:54:28,258 INFO    HandlerThread:799531 [handler.py:handle_request_defer():172] handle defer: 11
+2024-07-24 19:54:28,258 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: defer
+2024-07-24 19:54:28,259 INFO    SenderThread:799531 [sender.py:send_request_defer():610] handle sender defer: 11
+2024-07-24 19:54:28,259 INFO    SenderThread:799531 [file_pusher.py:join():178] waiting for file pusher
+2024-07-24 19:54:28,259 INFO    SenderThread:799531 [sender.py:transition_state():614] send defer: 12
+2024-07-24 19:54:28,260 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: defer
+2024-07-24 19:54:28,260 INFO    HandlerThread:799531 [handler.py:handle_request_defer():172] handle defer: 12
+2024-07-24 19:54:28,260 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: defer
+2024-07-24 19:54:28,260 INFO    SenderThread:799531 [sender.py:send_request_defer():610] handle sender defer: 12
+2024-07-24 19:54:28,261 INFO    SenderThread:799531 [file_stream.py:finish():614] file stream finish called
+2024-07-24 19:54:28,304 INFO    SenderThread:799531 [file_stream.py:finish():618] file stream finish is done
+2024-07-24 19:54:28,305 INFO    SenderThread:799531 [sender.py:transition_state():614] send defer: 13
+2024-07-24 19:54:28,305 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: defer
+2024-07-24 19:54:28,305 INFO    HandlerThread:799531 [handler.py:handle_request_defer():172] handle defer: 13
+2024-07-24 19:54:28,306 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: defer
+2024-07-24 19:54:28,306 INFO    SenderThread:799531 [sender.py:send_request_defer():610] handle sender defer: 13
+2024-07-24 19:54:28,307 INFO    SenderThread:799531 [sender.py:transition_state():614] send defer: 14
+2024-07-24 19:54:28,307 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: defer
+2024-07-24 19:54:28,308 DEBUG   SenderThread:799531 [sender.py:send():379] send: final
+2024-07-24 19:54:28,308 INFO    HandlerThread:799531 [handler.py:handle_request_defer():172] handle defer: 14
+2024-07-24 19:54:28,308 DEBUG   SenderThread:799531 [sender.py:send():379] send: footer
+2024-07-24 19:54:28,308 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: defer
+2024-07-24 19:54:28,309 INFO    SenderThread:799531 [sender.py:send_request_defer():610] handle sender defer: 14
+2024-07-24 19:54:28,310 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: poll_exit
+2024-07-24 19:54:28,311 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: poll_exit
+2024-07-24 19:54:28,311 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: poll_exit
+2024-07-24 19:54:28,312 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: poll_exit
+2024-07-24 19:54:28,313 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: server_info
+2024-07-24 19:54:28,313 DEBUG   SenderThread:799531 [sender.py:send_request():406] send_request: server_info
+2024-07-24 19:54:28,318 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: get_summary
+2024-07-24 19:54:28,319 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: sampled_history
+2024-07-24 19:54:28,320 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: internal_messages
+2024-07-24 19:54:28,352 INFO    MainThread:799531 [wandb_run.py:_footer_history_summary_info():3936] rendering history
+2024-07-24 19:54:28,352 INFO    MainThread:799531 [wandb_run.py:_footer_history_summary_info():3968] rendering summary
+2024-07-24 19:54:28,352 INFO    MainThread:799531 [wandb_run.py:_footer_sync_info():3895] logging synced files
+2024-07-24 19:54:28,353 DEBUG   HandlerThread:799531 [handler.py:handle_request():146] handle_request: shutdown
+2024-07-24 19:54:28,353 INFO    HandlerThread:799531 [handler.py:finish():866] shutting down handler
+2024-07-24 19:54:29,313 INFO    WriterThread:799531 [datastore.py:close():296] close: /storage/seit-guohanqi/yizhu_wen/Real-time-Voice-Watermark/wandb/run-20240724_195416-gejv91ga/run-gejv91ga.wandb
+2024-07-24 19:54:29,351 INFO    SenderThread:799531 [sender.py:finish():1546] shutting down sender
+2024-07-24 19:54:29,352 INFO    SenderThread:799531 [file_pusher.py:finish():172] shutting down file pusher
+2024-07-24 19:54:29,352 INFO    SenderThread:799531 [file_pusher.py:join():178] waiting for file pusher

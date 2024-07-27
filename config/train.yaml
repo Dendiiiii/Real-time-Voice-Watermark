@@ -1,8 +1,9 @@
 dataset: "librispeech"
 
 path:
-  raw_path: "./dataset/LibriSpeech_wav/"
+  raw_path: "/storage/seit-guohanqi/librispeech_dataset/LibriSpeech_small_wav"
   raw_path_test: "experiments/cloned_speechs"
+  mel_path: "./dataset/librispeech_dataset/LibriSpeech_small_wav"
   wm_speech: "./results/wm_speech"
   ckpt: "results/ckpt/"
   log_path: "results/log/"
@@ -20,7 +21,7 @@ optimize:
   # lambda_m: 0.01
   lambda_no_m: 0.01
   lambda_a: 0.01
-  batch_size: 3
+  batch_size: 16
   step_size: 5000 # large value means do not decay
   gamma: 0.98
   betas: [0.9, 0.98]
