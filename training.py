@@ -156,7 +156,7 @@ def main(configs):
                 "generator": wm_generator.state_dict(),
                 "detector": wm_detector.state_dict()
             },
-                os.path.join(path, "none-" + wm_generator.name + "_ep_{}_{}.pth.tar".format(ep,
+                os.path.join(path, "real_time_voice_watermark_ep_{}_{}.pth.tar".format(ep,
                                                                                          datetime.datetime.now().strftime(
                                                                                              "%Y-%m_%d_%H_%M_%S")))
             )
