@@ -31,7 +31,7 @@ class TFLoudnessLoss(nn.Module):
             loudness_watermark = self.calculate_loudness(segments_watermark)
 
             # Compute loudness difference and mean loss per band
-            loss = torch.mean(torch.abs(loudness_signal - loudness_watermark))
+            loss = torch.mean(torch.abs(loudness_watermark - loudness_signal))
             losses.append(loss)
 
         # Mean loss across all bands

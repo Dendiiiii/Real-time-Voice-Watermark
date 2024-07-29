@@ -31,7 +31,7 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)
 logging_mark = "#" * 20
 logging.basicConfig(filename="mylog_{}.log".format(datetime.datetime.now().strftime("%Y-%m_%d_%H_%M_%S")),
-                    level=logging.INFO, format="%(message)s")
+                    level=logging.ERROR, format="%(message)s")
 device = torch.device("cuda:4" if torch.cuda.is_available() else "cpu")
 
 
@@ -213,8 +213,11 @@ if __name__ == "__main__":
     model_config = yaml.load(open(r'./config/model.yaml', 'r'), Loader=yaml.FullLoader)
     train_config = yaml.load(open(r'./config/train.yaml', 'r'), Loader=yaml.FullLoader)
     configs = (process_config, model_config, train_config)
-
-    main(configs)
+    try:
+        main(configs)
+    except Exception as e:
+        error_type = type(e).__name__  # 获取异常类型的名称
+        logging.error(f"An error of type {error_type} occurred: {e}")
 
 
 
