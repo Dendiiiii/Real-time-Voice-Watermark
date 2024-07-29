@@ -38,6 +38,7 @@ device = torch.device("cuda:4" if torch.cuda.is_available() else "cpu")
 def main(configs):
     logging.info('main function')
     process_config, model_config, train_config = configs
+    print(asddsdada)
     prev_step = 0
 
     # ------------------- get train dataset
