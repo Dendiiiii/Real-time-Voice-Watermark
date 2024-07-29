@@ -30,7 +30,8 @@ np.random.seed(seed)
 torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)
 logging_mark = "#" * 20
-logging.basicConfig(level=logging.INFO, format="%(message)s")
+logging.basicConfig(filename="mylog_{}.log".format(datetime.datetime.now().strftime("%Y-%m_%d_%H_%M_%S")),
+                    level=logging.INFO, format="%(message)s")
 device = torch.device("cuda:4" if torch.cuda.is_available() else "cpu")
 
 
