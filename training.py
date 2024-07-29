@@ -151,7 +151,7 @@ def main(configs):
                          "train/train_binary_cross_entropy_loss": train_binary_cross_entropy_loss}
 
         if ep % save_circle == 0:
-            path = os.path.join(train_config["path"]["ckpt"], "pth")
+            path = train_config["path"]["ckpt"]
             torch.save({
                 "generator": wm_generator.state_dict(),
                 "detector": wm_detector.state_dict()
@@ -160,7 +160,8 @@ def main(configs):
                                                                                          datetime.datetime.now().strftime(
                                                                                              "%Y-%m_%d_%H_%M_%S")))
             )
-            shutil.copyfile(os.path.realpath(__file__), os.path.join(path, os.path.basename(os.path.realpath(__file__)))) # save training script
+            shutil.copyfile(os.path.realpath(__file__),
+                            os.path.join(path, os.path.basename(os.path.realpath(__file__)))) # save training script
 
         # ------------------- validation stage
         with torch.no_grad():
