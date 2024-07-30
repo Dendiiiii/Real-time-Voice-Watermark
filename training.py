@@ -31,14 +31,13 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)
 logging_mark = "#" * 20
 logging.basicConfig(filename="mylog_{}.log".format(datetime.datetime.now().strftime("%Y-%m_%d_%H_%M_%S")),
-                    level=logging.ERROR, format="%(message)s")
+                    level=logging.INFO, format="%(message)s")
 device = torch.device("cuda:4" if torch.cuda.is_available() else "cpu")
 
 
 def main(configs):
     logging.info('main function')
     process_config, model_config, train_config = configs
-    print(asddsdada)
     prev_step = 0
 
     # ------------------- get train dataset
@@ -149,8 +148,10 @@ def main(configs):
 
         train_loudness_loss = running_loudness_loss / len(audios_loader)
         train_binary_cross_entropy_loss = running_binary_cross_entropy_loss / len(audios_loader)
+        total_loss = train_loudness_loss + train_binary_cross_entropy_loss
         train_metrics = {"train/train_loudness_loss": train_loudness_loss,
-                         "train/train_binary_cross_entropy_loss": train_binary_cross_entropy_loss}
+                         "train/train_binary_cross_entropy_loss": train_binary_cross_entropy_loss,
+                         "train/total_loss": total_loss}
 
         if ep % save_circle == 0:
             path = train_config["path"]["ckpt"]
@@ -171,9 +172,7 @@ def main(configs):
             wm_detector.eval()
             avg_wav_loss = 0
             avg_acc = 0
-            count = 0
             for sample in track(val_audios_loader):
-                count += 1
                 # ------------------- generate watermark
                 wav_matrix = sample["matrix"].to(device)
                 watermarked_wav, wm = wm_generator(wav_matrix)
@@ -185,10 +184,12 @@ def main(configs):
                 losses = loss.en_de_loss(wav_matrix, watermarked_wav, wm, prob, reshaped_masks)
                 avg_wav_loss += losses[0]
                 avg_acc += losses[1]
-            avg_wav_loss /= count
-            avg_acc /= count
+            avg_wav_loss /= len(val_audios_loader)
+            avg_acc /= len(val_audios_loader)
+            val_total_loss = avg_wav_loss + avg_acc
             val_metrics = {"val/val_loudness_loss": avg_wav_loss,
-                           "val/val_binary_cross_entropy_loss": avg_acc}
+                           "val/val_binary_cross_entropy_loss": avg_acc,
+                           "val/val_total_loss": val_total_loss}
 
             # mel_spec = librosa.feature.melspectrogram(wav_matrix[-1].numpy(), sr=16000)
             # mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
