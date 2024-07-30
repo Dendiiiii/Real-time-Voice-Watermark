@@ -16,7 +16,6 @@ class TFLoudnessLoss(nn.Module):
         watermark_loudness = [meter.integrated_loudness(watermark.cpu().detach().numpy()) for watermark in watermarks]
         watermark_loudness_tensor = torch.tensor(watermark_loudness)
         loudness_loss = torch.mean(watermark_loudness_tensor - signal_loudness_tensor)
-        print(loudness_loss)
         return loudness_loss
 
 
