@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torchaudio
-import pyloudnorm as sf
+import pyloudnorm as pyln
 import torchaudio.functional as F
 
 
