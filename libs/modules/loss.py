@@ -9,7 +9,7 @@ class TFLoudnessLoss(nn.Module):
     def __init__(self):
         super(TFLoudnessLoss, self).__init__()
     def forward(self, signal, watermark, sample_rate):
-        meter = pyln.Meter(self.sample_rate)
+        meter = pyln.Meter(sample_rate)
         signal_loudness = meter.integrated_loudness(signal)
         watermark_loudness = meter.integrated_loudness(watermark)
         loudness_loss = watermark_loudness - signal_loudness
