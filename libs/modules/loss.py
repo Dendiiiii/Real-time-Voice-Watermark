@@ -24,9 +24,11 @@ class Loss(nn.Module):
         super(Loss, self).__init__()
         self.bce_loss = nn.BCELoss()
         self.loudness_loss = TFLoudnessLoss()
+        self.l1_loss = nn.L1Loss()
 
     def en_de_loss(self, x, w_x, wm, prob, labels):
         # 从小数点到db level做mse, regularizer
         bce_loss = self.bce_loss(prob[:, 0, :], labels.type(torch.float32))
         loudness_loss = self.loudness_loss(x, wm, 16000)
-        return loudness_loss, bce_loss
+        l1_loss = self.l1_loss(wm, torch.zeros_like(wm))
+        return l1_loss, bce_loss
