@@ -238,11 +238,11 @@ def main(configs):
             # wm_mel_pth = save_spectrogram_as_img(watermarked_wav[-1].cpu().numpy(), melspec_pth)
             # audio_table.add_data(wandb.Audio(wav_matrix[-1].cpu().numpy()),
             #                      wandb.Audio(watermarked_wav[-1].cpu().numpy()))
-            timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.png'
-            print(wav_matrix[-1].cpu().size())
-            print(watermarked_wav[-1].cpu().size())
-            torchaudio.save(timestamp+".wav", wav_matrix[-1].cpu(), 16000)
-            torchaudio.save(timestamp+"_wm.wav", watermarked_wav[-1].cpu(), 16000)
+            # timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.png'
+            # print(wav_matrix[-1].cpu().size())
+            # print(watermarked_wav[-1].cpu().size())
+            # torchaudio.save(timestamp+".wav", wav_matrix[-1].cpu(), 16000)
+            # torchaudio.save(timestamp+"_wm.wav", watermarked_wav[-1].cpu(), 16000)
             wandb.log({**train_metrics, **val_metrics})
             logging.info("#e" * 60)
             logging.info("eval_epoch:{} - l1_loss:{:.8f} - binary_cross_entropy_loss:{:.8f} - perceptual_loss:{:.8f}".
