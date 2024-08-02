@@ -88,8 +88,7 @@ def main(configs):
         "dataset": "LibriSpeech",
         "epochs": train_config["iter"]["epoch"],
     })
-    audio_table = wandb.Table(columns=['Original Mel Spectrogram', 'Watermarked Mel Spectrogram',
-                                 'Original Audio', 'Watermarked Audio'])
+    audio_table = wandb.Table(columns=['Original Audio', 'Watermarked Audio'])
     encoder = SimpleEncoder()
     decoder = SimpleDecoder()
     detector = SimpleDetector()
@@ -241,13 +240,12 @@ def main(configs):
             spec_pth = os.path.join(train_config["path"]['mel_path'], 'audio_melspec')
             melspec_pth = os.path.join(train_config["path"]['mel_path'], 'wm_melspec')
             print("2")
-            wav_mel_pth = save_spectrogram_as_img(wav_matrix[-1].cpu().numpy(), spec_pth)
-            print("2.1")
-            wm_mel_pth = save_spectrogram_as_img(watermarked_wav[-1].cpu().numpy(), melspec_pth)
-            print("3")
+            # wav_mel_pth = save_spectrogram_as_img(wav_matrix[-1].cpu().numpy(), spec_pth)
+            # print("2.1")
+            # wm_mel_pth = save_spectrogram_as_img(watermarked_wav[-1].cpu().numpy(), melspec_pth)
+            # print("3")
             audio_table.add_data(wandb.Audio(wav_matrix[-1].cpu().numpy()),
-                                 wandb.Audio(watermarked_wav[-1].cpu().numpy()),
-                                 wandb.Image(wav_mel_pth), wandb.Image(wm_mel_pth))
+                                 wandb.Audio(watermarked_wav[-1].cpu().numpy()))
             print("4")
             wandb.log({**train_metrics, **val_metrics})
             logging.info("#e" * 60)
