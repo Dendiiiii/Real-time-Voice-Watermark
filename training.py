@@ -38,13 +38,16 @@ device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu")
 def save_spectrogram_as_img(audio, datadir, sample_rate=16000, plt_type='mel'):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.png'
     out_path = os.path.join(datadir, timestamp)
+    print(type(audio))
     if plt_type == 'spec':
         spec = np.abs(librosa.stft(audio))
         spec_db = librosa.amplitude_to_db(spec, ref=np.max)
     else:
+        print('test_save_func_1')
         mel_spec = librosa.feature.melspectrogram(audio, sr=sample_rate)
+        print('test_save_func_2')
         mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
-
+        print('test_save_func_3')
     fig = plt.Figure()
     ax = fig.add_subplot()
     ax.set_axis_off()
