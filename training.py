@@ -167,7 +167,7 @@ def main(configs):
 
             losses = loss.en_de_loss(wav_matrix, watermarked_wav, wm, prob, reshaped_masks)
 
-            sum_loss = losses[0] + losses[1] + 1e6 * losses[2]
+            sum_loss = losses[0] + losses[1] + 1e-6 * losses[2]
 
             sum_loss.backward()
             en_de_op.step()
@@ -230,7 +230,7 @@ def main(configs):
             val_l1_loss = running_l1_loss / len(val_audios_loader)
             val_bce = running_bce / len(val_audios_loader)
             val_perceptual_loss = running_perceptual_loss / len(val_audios_loader)
-            val_total_loss = val_l1_loss + val_bce + 1e6 * val_perceptual_loss
+            val_total_loss = val_l1_loss + val_bce + 1e-6 * val_perceptual_loss
 
             val_metrics = {"val/val_l1_loss": val_l1_loss,
                            "val/val_binary_cross_entropy_loss": val_bce,
