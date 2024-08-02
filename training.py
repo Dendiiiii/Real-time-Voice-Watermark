@@ -160,7 +160,7 @@ def main(configs):
 
             losses = loss.en_de_loss(wav_matrix, watermarked_wav, wm, prob, reshaped_masks)
 
-            sum_loss = losses[0] + losses[1] + losses[2]
+            sum_loss = losses[0] + losses[1] + 1e6 * losses[2]
 
             sum_loss.backward()
             en_de_op.step()
@@ -223,7 +223,7 @@ def main(configs):
             val_l1_loss = running_l1_loss / len(val_audios_loader)
             val_bce = running_bce / len(val_audios_loader)
             val_perceptual_loss = running_perceptual_loss / len(val_audios_loader)
-            val_total_loss = val_l1_loss + val_bce + val_perceptual_loss
+            val_total_loss = val_l1_loss + val_bce + 1e6 * val_perceptual_loss
 
             val_metrics = {"val/val_l1_loss": val_l1_loss,
                            "val/val_binary_cross_entropy_loss": val_bce,
@@ -233,12 +233,8 @@ def main(configs):
             spec_pth = os.path.join(train_config["path"]['mel_path'], 'audio_melspec')
             melspec_pth = os.path.join(train_config["path"]['mel_path'], 'wm_melspec')
 
-            wav_mel_pth = save_spectrogram_as_img(wav_matrix[-1], spec_pth)
-            wm_mel_pth = save_spectrogram_as_img(watermarked_wav[-1], melspec_pth)
-
-            print("test audio")
-            wandb.Audio(wav_matrix[-1].cpu().numpy())
-            print("test finish")
+            wav_mel_pth = save_spectrogram_as_img(wav_matrix[-1].cpu().numpy(), spec_pth)
+            wm_mel_pth = save_spectrogram_as_img(watermarked_wav[-1].cpu().numpy(), melspec_pth)
 
             audio_table.add_data(wandb.Audio(wav_matrix[-1].cpu().numpy()),
                                  wandb.Audio(watermarked_wav[-1].cpu().numpy()),
