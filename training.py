@@ -32,7 +32,7 @@ torch.cuda.manual_seed(seed)
 logging_mark = "#" * 20
 logging.basicConfig(filename="mylog_{}.log".format(datetime.datetime.now().strftime("%Y-%m_%d_%H_%M_%S")),
                     level=logging.INFO, format="%(message)s")
-device = torch.device("cuda:4" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu")
 
 
 def save_spectrogram_as_img(audio, datadir, sample_rate=16000, plt_type='mel'):
