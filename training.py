@@ -49,18 +49,23 @@ def save_spectrogram_as_img(audio, datadir, sample_rate=16000, plt_type='mel'):
         mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
         print('test_save_func_3')
     fig = plt.Figure()
+    print('test_save_func_4')
     ax = fig.add_subplot()
+    print('test_save_func_5')
     ax.set_axis_off()
+    print('test_save_func_6')
 
     librosa.display.specshow(
         spec_db if plt_type == 'spec' else mel_spec_db,
         y_axis='log' if plt_type == 'spec' else 'mel',
         x_axis='time', ax=ax)
+    print('test_save_func_7')
 
     if not os.path.exists(out_path):
         os.makedirs(out_path)
 
     fig.savefig(out_path)
+    print('test_save_func_8')
     return out_path
 
 
