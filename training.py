@@ -242,6 +242,7 @@ def main(configs):
             melspec_pth = os.path.join(train_config["path"]['mel_path'], 'wm_melspec')
             print("2")
             wav_mel_pth = save_spectrogram_as_img(wav_matrix[-1].cpu().numpy(), spec_pth)
+            print("2.1")
             wm_mel_pth = save_spectrogram_as_img(watermarked_wav[-1].cpu().numpy(), melspec_pth)
             print("3")
             audio_table.add_data(wandb.Audio(wav_matrix[-1].cpu().numpy()),
