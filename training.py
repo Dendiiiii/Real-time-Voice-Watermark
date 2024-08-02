@@ -1,6 +1,9 @@
 import json
 import os
 import shutil
+
+import torchaudio
+
 import wandb
 import librosa
 import matplotlib.pyplot as plt
@@ -38,22 +41,16 @@ device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu")
 def save_spectrogram_as_img(audio, datadir, sample_rate=16000, plt_type='mel'):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.png'
     out_path = os.path.join(datadir, timestamp)
-    print(type(audio))
     if plt_type == 'spec':
         spec = np.abs(librosa.stft(audio))
         spec_db = librosa.amplitude_to_db(spec, ref=np.max)
     else:
-        print('test_save_func_1')
         mel_spec = librosa.feature.melspectrogram(audio, sr=sample_rate)
-        print('test_save_func_2')
         mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
-        print('test_save_func_3')
+
     fig = plt.Figure()
-    print('test_save_func_4')
     ax = fig.add_subplot()
-    print('test_save_func_5')
     ax.set_axis_off()
-    print('test_save_func_6')
 
     librosa.display.specshow(
         spec_db if plt_type == 'spec' else mel_spec_db,
@@ -88,7 +85,7 @@ def main(configs):
         "dataset": "LibriSpeech",
         "epochs": train_config["iter"]["epoch"],
     })
-    audio_table = wandb.Table(columns=['Original Audio', 'Watermarked Audio'])
+    # audio_table = wandb.Table(columns=['Original Audio', 'Watermarked Audio'])
     encoder = SimpleEncoder()
     decoder = SimpleDecoder()
     detector = SimpleDetector()
@@ -236,18 +233,16 @@ def main(configs):
                            "val/val_binary_cross_entropy_loss": val_bce,
                            "val/val_perceptual_loss": val_perceptual_loss,
                            "val/val_total_loss": val_total_loss}
-            print("1")
+
             spec_pth = os.path.join(train_config["path"]['mel_path'], 'audio_melspec')
             melspec_pth = os.path.join(train_config["path"]['mel_path'], 'wm_melspec')
-            print("2")
             # wav_mel_pth = save_spectrogram_as_img(wav_matrix[-1].cpu().numpy(), spec_pth)
-            # print("2.1")
             # wm_mel_pth = save_spectrogram_as_img(watermarked_wav[-1].cpu().numpy(), melspec_pth)
-            # print("3")
-            print(type(wav_matrix[-1].cpu().numpy()))
-            audio_table.add_data(wandb.Audio(wav_matrix[-1].cpu().numpy()),
-                                 wandb.Audio(watermarked_wav[-1].cpu().numpy()))
-            print("4")
+            # audio_table.add_data(wandb.Audio(wav_matrix[-1].cpu().numpy()),
+            #                      wandb.Audio(watermarked_wav[-1].cpu().numpy()))
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.png'
+            torchaudio.save(timestamp+".wav", wav_matrix[-1],16000)
+            torchaudio.save(timestamp+"_wm.wav", watermarked_wav[-1], 16000)
             wandb.log({**train_metrics, **val_metrics})
             logging.info("#e" * 60)
             logging.info("eval_epoch:{} - l1_loss:{:.8f} - binary_cross_entropy_loss:{:.8f} - perceptual_loss:{:.8f}".
