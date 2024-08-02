@@ -244,6 +244,7 @@ def main(configs):
             # print("2.1")
             # wm_mel_pth = save_spectrogram_as_img(watermarked_wav[-1].cpu().numpy(), melspec_pth)
             # print("3")
+            print(type(wav_matrix[-1].cpu().numpy()))
             audio_table.add_data(wandb.Audio(wav_matrix[-1].cpu().numpy()),
                                  wandb.Audio(watermarked_wav[-1].cpu().numpy()))
             print("4")
