@@ -105,6 +105,7 @@ def main(configs):
         step = 0
         running_l1_loss = 0.0
         running_binary_cross_entropy_loss = 0.0
+        running_perceptual_loss = 0.0
         logging.info("Epoch {}/{}".format(ep, epoch_num))
         for sample in track(audios_loader):
             global_step += 1
@@ -134,23 +135,31 @@ def main(configs):
 
             losses = loss.en_de_loss(wav_matrix, watermarked_wav, wm, prob, reshaped_masks)
 
-            sum_loss = losses[0] + losses[1]
+            sum_loss = losses[0] + losses[1] + losses[2]
 
             sum_loss.backward()
             en_de_op.step()
 
             running_l1_loss += losses[0]
             running_binary_cross_entropy_loss += losses[1]
+            running_perceptual_loss += losses[2]
 
             if step % show_circle == 0:
                 logging.info("-" * 100)
-                logging.info("training_step:{} - l1_loss:{:.8f} - binary_cross_entropy_loss:{:.8f}".format(step, losses[0], losses[1]))
+                logging.info("training_step:{} - l1_loss:{:.8f} - binary_cross_entropy_loss:{:.8f} - "
+                             "perceptual_loss:{:.8f}".format(step, losses[0], losses[1], losses[2]))
 
         train_l1_loss = running_l1_loss / len(audios_loader)
         train_binary_cross_entropy_loss = running_binary_cross_entropy_loss / len(audios_loader)
-        total_loss = train_l1_loss + train_binary_cross_entropy_loss
+        train_perceptual_loss = running_perceptual_loss / len(audios_loader)
+        total_loss = train_l1_loss + train_binary_cross_entropy_loss + train_perceptual_loss
+        logging.info("t" * 60)
+        logging.info("train_epoch:{} - l1_loss:{:.8f} - binary_cross_entropy_loss:{:.8f} - perceptual_loss:{:.8f}".
+                     format(ep, train_l1_loss, train_binary_cross_entropy_loss, train_perceptual_loss))
+
         train_metrics = {"train/train_l1_loss": train_l1_loss,
                          "train/train_binary_cross_entropy_loss": train_binary_cross_entropy_loss,
+                         "train/train_perceptual_loss": train_perceptual_loss,
                          "train/total_loss": total_loss}
 
         if ep % save_circle == 0:
@@ -159,9 +168,8 @@ def main(configs):
                 "generator": wm_generator.state_dict(),
                 "detector": wm_detector.state_dict()
             },
-                os.path.join(path, "real_time_voice_watermark_ep_{}_{}.pth.tar".format(ep,
-                                                                                         datetime.datetime.now().strftime(
-                                                                                             "%Y-%m_%d_%H_%M_%S")))
+                os.path.join(path, "real_time_voice_watermark_ep_{}_{}.pth.tar".
+                             format(ep, datetime.datetime.now().strftime("%Y-%m_%d_%H_%M_%S")))
             )
             shutil.copyfile(os.path.realpath(__file__),
                             os.path.join(path, os.path.basename(os.path.realpath(__file__)))) # save training script
@@ -170,8 +178,9 @@ def main(configs):
         with torch.no_grad():
             wm_generator.eval()
             wm_detector.eval()
-            avg_l1_loss = 0
-            avg_acc = 0
+            running_l1_loss = 0.0
+            running_bce = 0.0
+            running_perceptual_loss = 0.0
             for sample in track(val_audios_loader):
                 # ------------------- generate watermark
                 wav_matrix = sample["matrix"].to(device)
@@ -182,13 +191,18 @@ def main(configs):
                 detect_data[reshaped_masks] = watermarked_wav[reshaped_masks]
                 prob, msg = wm_detector(detect_data)
                 losses = loss.en_de_loss(wav_matrix, watermarked_wav, wm, prob, reshaped_masks)
-                avg_l1_loss += losses[0]
-                avg_acc += losses[1]
-            avg_l1_loss /= len(val_audios_loader)
-            avg_acc /= len(val_audios_loader)
-            val_total_loss = avg_l1_loss + avg_acc
-            val_metrics = {"val/val_l1_loss": avg_l1_loss,
-                           "val/val_binary_cross_entropy_loss": avg_acc,
+                running_l1_loss += losses[0]
+                running_bce += losses[1]
+                running_perceptual_loss += losses[2]
+
+            val_l1_loss = running_l1_loss / len(val_audios_loader)
+            val_bce = running_bce / len(val_audios_loader)
+            val_perceptual_loss = running_perceptual_loss / len(val_audios_loader)
+            val_total_loss = val_l1_loss + val_bce + val_perceptual_loss
+
+            val_metrics = {"val/val_l1_loss": val_l1_loss,
+                           "val/val_binary_cross_entropy_loss": val_bce,
+                           "val/val_perceptual_loss": val_perceptual_loss,
                            "val/val_total_loss": val_total_loss}
 
             # mel_spec = librosa.feature.melspectrogram(wav_matrix[-1].numpy(), sr=16000)
@@ -203,7 +217,8 @@ def main(configs):
 
             wandb.log({**train_metrics, **val_metrics})
             logging.info("#e" * 60)
-            logging.info("eval_epoch:{} - l1_loss:{:.8f} - binary_cross_entropy_loss:{:.8f}".format(ep, avg_l1_loss, avg_acc))
+            logging.info("eval_epoch:{} - l1_loss:{:.8f} - binary_cross_entropy_loss:{:.8f} - perceptual_loss:{:.8f}".
+                         format(ep, val_l1_loss, val_bce, val_perceptual_loss))
     wandb.finish()
 
 
