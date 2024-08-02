@@ -35,6 +35,31 @@ logging.basicConfig(filename="mylog_{}.log".format(datetime.datetime.now().strft
 device = torch.device("cuda:4" if torch.cuda.is_available() else "cpu")
 
 
+def save_spectrogram_as_img(audio, datadir, sample_rate=16000, plt_type='mel'):
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.png'
+    out_path = os.path.join(datadir, timestamp)
+    if plt_type == 'spec':
+        spec = np.abs(librosa.stft(audio))
+        spec_db = librosa.amplitude_to_db(spec, ref=np.max)
+    else:
+        mel_spec = librosa.feature.melspectrogram(audio, sr=sample_rate)
+        mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+
+    fig = plt.Figure()
+    ax = fig.add_subplot()
+    ax.set_axis_off()
+
+    librosa.display.specshow(
+        spec_db if plt_type == 'spec' else mel_spec_db,
+        y_axis='log' if plt_type == 'spec' else 'mel',
+        x_axis='time', ax=ax)
+
+    if not os.path.exists(out_path):
+        os.makedirs(out_path)
+
+    fig.savefig(out_path)
+
+
 def main(configs):
     logging.info('main function')
     process_config, model_config, train_config = configs
@@ -54,9 +79,8 @@ def main(configs):
         "dataset": "LibriSpeech",
         "epochs": train_config["iter"]["epoch"],
     })
-    table = wandb.Table(columns=['Original Mel Spectrogram'])
-    # table = wandb.Table(columns=['Original Mel Spectrogram', 'Watermarked Mel Spectrogram',
-    #                              'Original Audio', 'Watermarked Audio'])
+    audio_table = wandb.Table(columns=['Original Mel Spectrogram', 'Watermarked Mel Spectrogram',
+                                 'Original Audio', 'Watermarked Audio'])
     encoder = SimpleEncoder()
     decoder = SimpleDecoder()
     detector = SimpleDetector()
@@ -205,15 +229,15 @@ def main(configs):
                            "val/val_perceptual_loss": val_perceptual_loss,
                            "val/val_total_loss": val_total_loss}
 
-            # mel_spec = librosa.feature.melspectrogram(wav_matrix[-1].numpy(), sr=16000)
-            # mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
-            # fig = plt.Figure()
-            # ax = fig.add_subplot()
-            # ax.set_axis_off()
-            #
-            # librosa.display.specshow(mel_spec_db, y_axis="mel", x_axis="time", ax=ax)
-            # fig.savefig(mel_spectrogram_path)
-            # table.add_data(wandb.Image(mel_spectrogram_path))
+            spec_pth = os.path.join(train_config["path"]['mel_path'], 'audio_melspec')
+            melspec_pth = os.path.join(train_config["path"]['mel_path'], 'wm_melspec')
+
+            save_spectrogram_as_img(wav_matrix[-1], spec_pth)
+            save_spectrogram_as_img(watermarked_wav[-1], melspec_pth)
+
+            audio_table.add_data(wandb.Audio(wav_matrix[-1].cpu().numpy()),
+                                 wandb.Audio(watermarked_wav[-1].cpu().numpy()),
+                                 wandb.Image(spec_pth), wandb.Image(melspec_pth))
 
             wandb.log({**train_metrics, **val_metrics})
             logging.info("#e" * 60)

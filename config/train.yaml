@@ -3,7 +3,7 @@ dataset: "librispeech"
 path:
   raw_path: "/storage/seit-guohanqi/librispeech_dataset/LibriSpeech_small_wav"
   raw_path_test: "experiments/cloned_speechs"
-  mel_path: "./dataset/librispeech_dataset/LibriSpeech_small_wav"
+  mel_path: "./result/melspectogram_images/"
   wm_speech: "./results/wm_speech"
   ckpt: "results/ckpt/"
   log_path: "results/log/"
