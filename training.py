@@ -58,6 +58,7 @@ def save_spectrogram_as_img(audio, datadir, sample_rate=16000, plt_type='mel'):
         os.makedirs(out_path)
 
     fig.savefig(out_path)
+    return out_path
 
 
 def main(configs):
@@ -232,12 +233,16 @@ def main(configs):
             spec_pth = os.path.join(train_config["path"]['mel_path'], 'audio_melspec')
             melspec_pth = os.path.join(train_config["path"]['mel_path'], 'wm_melspec')
 
-            save_spectrogram_as_img(wav_matrix[-1], spec_pth)
-            save_spectrogram_as_img(watermarked_wav[-1], melspec_pth)
+            wav_mel_pth = save_spectrogram_as_img(wav_matrix[-1], spec_pth)
+            wm_mel_pth = save_spectrogram_as_img(watermarked_wav[-1], melspec_pth)
+
+            print("test audio")
+            wandb.Audio(wav_matrix[-1].cpu().numpy())
+            print("test finish")
 
             audio_table.add_data(wandb.Audio(wav_matrix[-1].cpu().numpy()),
                                  wandb.Audio(watermarked_wav[-1].cpu().numpy()),
-                                 wandb.Image(spec_pth), wandb.Image(melspec_pth))
+                                 wandb.Image(wav_mel_pth), wandb.Image(wm_mel_pth))
 
             wandb.log({**train_metrics, **val_metrics})
             logging.info("#e" * 60)
