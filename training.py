@@ -56,13 +56,11 @@ def save_spectrogram_as_img(audio, datadir, sample_rate=16000, plt_type='mel'):
         spec_db if plt_type == 'spec' else mel_spec_db,
         y_axis='log' if plt_type == 'spec' else 'mel',
         x_axis='time', ax=ax)
-    print('test_save_func_7')
 
     if not os.path.exists(out_path):
         os.makedirs(out_path)
 
     fig.savefig(out_path)
-    print('test_save_func_8')
     return out_path
 
 
@@ -241,8 +239,10 @@ def main(configs):
             # audio_table.add_data(wandb.Audio(wav_matrix[-1].cpu().numpy()),
             #                      wandb.Audio(watermarked_wav[-1].cpu().numpy()))
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.png'
-            torchaudio.save(timestamp+".wav", wav_matrix[-1],16000)
-            torchaudio.save(timestamp+"_wm.wav", watermarked_wav[-1], 16000)
+            print(wav_matrix[-1].cpu().size())
+            print(watermarked_wav[-1].cpu().size())
+            torchaudio.save(timestamp+".wav", wav_matrix[-1].cpu(), 16000)
+            torchaudio.save(timestamp+"_wm.wav", watermarked_wav[-1].cpu(), 16000)
             wandb.log({**train_metrics, **val_metrics})
             logging.info("#e" * 60)
             logging.info("eval_epoch:{} - l1_loss:{:.8f} - binary_cross_entropy_loss:{:.8f} - perceptual_loss:{:.8f}".
