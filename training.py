@@ -263,9 +263,3 @@ if __name__ == "__main__":
     except Exception as e:
         error_type = type(e).__name__  # 获取异常类型的名称
         logging.error(f"An error of type {error_type} occurred: {e}")
-
-
-
-
-
-
