@@ -244,7 +244,7 @@ def main(configs):
             # print(watermarked_wav[-1].cpu().size())
             # torchaudio.save(timestamp+".wav", wav_matrix[-1].cpu(), 16000)
             # torchaudio.save(timestamp+"_wm.wav", watermarked_wav[-1].cpu(), 16000)
-            wandb.log({**train_metrics, **val_metrics})
+            wandb.log({**train_metrics, **val_metrics, "audio": audio_table})
             logging.info("#e" * 60)
             logging.info("eval_epoch:{} - l1_loss:{:.8f} - binary_cross_entropy_loss:{:.8f} - perceptual_loss:{:.8f}".
                          format(ep, val_l1_loss, val_bce, val_perceptual_loss))
