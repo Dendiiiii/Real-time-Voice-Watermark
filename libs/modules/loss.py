@@ -34,20 +34,6 @@ def perceptual_loss(watermark, sample_rate=16000):
     return loss
 
 
-# class TFLoudnessLoss(nn.Module):
-#     def __init__(self):
-#         super(TFLoudnessLoss, self).__init__()
-#
-#     def forward(self, signals, watermarks, sample_rate):
-#         meter = pyln.Meter(sample_rate)
-#         signal_loudness = [meter.integrated_loudness(signal.cpu().detach().numpy()) for signal in signals]
-#         signal_loudness_tensor = torch.tensor(signal_loudness)
-#         watermark_loudness = [meter.integrated_loudness(watermark.cpu().detach().numpy()) for watermark in watermarks]
-#         watermark_loudness_tensor = torch.tensor(watermark_loudness)
-#         loudness_loss = torch.mean(torch.abs(watermark_loudness_tensor - signal_loudness_tensor))
-#         return loudness_loss
-
-
 class Loss(nn.Module):
     def __init__(self):
         super(Loss, self).__init__()

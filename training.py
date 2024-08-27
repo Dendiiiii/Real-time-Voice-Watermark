@@ -7,6 +7,7 @@ import torchaudio
 import wandb
 import librosa
 import matplotlib.pyplot as plt
+import librosa.feature
 
 from models import WatermarkModel, WatermarkDetector
 import torch
@@ -83,7 +84,7 @@ def main(configs):
         "dataset": "LibriSpeech",
         "epochs": train_config["iter"]["epoch"],
     })
-    # audio_table = wandb.Table(columns=['Original Audio', 'Watermarked Audio'])
+    audio_table = wandb.Table(columns=['Original Audio', 'Watermarked Audio'])
     encoder = SimpleEncoder()
     decoder = SimpleDecoder()
     detector = SimpleDetector()
@@ -236,8 +237,8 @@ def main(configs):
             melspec_pth = os.path.join(train_config["path"]['mel_path'], 'wm_melspec')
             # wav_mel_pth = save_spectrogram_as_img(wav_matrix[-1].cpu().numpy(), spec_pth)
             # wm_mel_pth = save_spectrogram_as_img(watermarked_wav[-1].cpu().numpy(), melspec_pth)
-            # audio_table.add_data(wandb.Audio(wav_matrix[-1].cpu().numpy()),
-            #                      wandb.Audio(watermarked_wav[-1].cpu().numpy()))
+            audio_table.add_data(wandb.Audio(wav_matrix[-1].cpu().numpy()),
+                                 wandb.Audio(watermarked_wav[-1].cpu().numpy()))
             # timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.png'
             # print(wav_matrix[-1].cpu().size())
             # print(watermarked_wav[-1].cpu().size())
