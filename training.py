@@ -36,7 +36,7 @@ torch.cuda.manual_seed(seed)
 logging_mark = "#" * 20
 logging.basicConfig(filename="mylog_{}.log".format(datetime.datetime.now().strftime("%Y-%m_%d_%H_%M_%S")),
                     level=logging.INFO, format="%(message)s")
-device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 def select_random_chunk(audio_data, percentage=0.8):
