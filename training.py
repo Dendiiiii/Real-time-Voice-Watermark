@@ -118,7 +118,7 @@ def main(configs):
     # ------------------- get train dataset
     train_audios = my_dataset(process_config=process_config, train_config=train_config, flag='train')
     val_audios = my_dataset(process_config=process_config, train_config=train_config, flag='val')
-    dev_audios = my_dataset(process_config=process_config, train_config=train_config, flag='dev')
+    dev_audios = my_dataset(process_config=process_config, train_config=train_config, flag='test')
 
     batch_size = train_config["optimize"]["batch_size"]
     assert batch_size < len(train_audios)
