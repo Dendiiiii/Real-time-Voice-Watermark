@@ -3,7 +3,7 @@ dataset: "librispeech"
 path:
   raw_path: "/storage/seit-guohanqi/librispeech_dataset/LibriSpeech_wav"
   raw_path_test: "experiments/cloned_speechs"
-  mel_path: "./result/melspectogram_images/"
+  mel_path: "./melspectogram_images"
   wm_speech: "./results/wm_speech"
   ckpt: "results/ckpt/"
   log_path: "results/log/"
@@ -13,6 +13,7 @@ future_amt_waveform: 8000
 
 watermark:
   length: 10
+  nbits: 2
 
 optimize:
   lr: 0.00002
@@ -38,7 +39,7 @@ optimize:
 
 
 iter:
-  epoch: 20
+  epoch: 300
   save_circle: 5
   show_circle: 100
   val_circle: 100
