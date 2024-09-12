@@ -190,6 +190,7 @@ def main(configs):
     lambda_e = train_config["optimize"]["lambda_e"]
     lambda_m = train_config["optimize"]["lambda_m"]
     global_step = 0
+    interval = math.ceil(len(train_audios_loader) / 30)
     for ep in range(1, epoch_num + 1):
         wm_generator.train()
         wm_detector.train()
@@ -318,7 +319,6 @@ def main(configs):
                            "val/val_freq_loss": val_freq_loss,
                            "val/val_total_loss": val_total_loss}
 
-            interval = math.ceil(len(dev_audios_loader) / 30)
             if ep % interval == 0:
                 # Compute the spectrogram
                 spectrogram_transform = torchaudio.transforms.Spectrogram(n_fft=320, hop_length=160)
