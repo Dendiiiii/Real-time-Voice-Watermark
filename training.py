@@ -118,7 +118,7 @@ def main(configs):
     # ------------------- get train dataset
     train_audios = my_dataset(process_config=process_config, train_config=train_config, flag='train')
     val_audios = my_dataset(process_config=process_config, train_config=train_config, flag='val')
-    dev_audios = my_dataset(process_config=process_config, train_config=train_config, flag='dev')
+    dev_audios = my_dataset(process_config=process_config, train_config=train_config, flag='test')
 
     batch_size = train_config["optimize"]["batch_size"]
     assert batch_size < len(train_audios)
@@ -318,71 +318,73 @@ def main(configs):
                            "val/val_freq_loss": val_freq_loss,
                            "val/val_total_loss": val_total_loss}
 
-            # Compute the spectrogram
-            spectrogram_transform = torchaudio.transforms.Spectrogram(n_fft=320, hop_length=160)
+            interval = math.ceil(len(dev_audios_loader) / 30)
+            if ep % interval == 0:
+                # Compute the spectrogram
+                spectrogram_transform = torchaudio.transforms.Spectrogram(n_fft=320, hop_length=160)
 
-            original_spectrogram = spectrogram_transform(wav_matrix[-1].cpu())
-            watermarked_audio_spectrogram = spectrogram_transform(watermarked_wav[-1].cpu())
-            watermark_wav_spectrogram = spectrogram_transform(wm[-1].cpu())
+                original_spectrogram = spectrogram_transform(wav_matrix[-1].cpu())
+                watermarked_audio_spectrogram = spectrogram_transform(watermarked_wav[-1].cpu())
+                watermark_wav_spectrogram = spectrogram_transform(wm[-1].cpu())
 
-            # Convert the spectrogram to a format suitable for matplotlib
-            # Convert the spectrogram to dB scale for better visualization
-            original_spectrogram_db = torchaudio.transforms.AmplitudeToDB()(original_spectrogram)
-            watermarked_audio_spectrogram_db = torchaudio.transforms.AmplitudeToDB()(watermarked_audio_spectrogram)
-            watermark_wm_spectrogram_db = torchaudio.transforms.AmplitudeToDB()(watermark_wav_spectrogram)
+                # Convert the spectrogram to a format suitable for matplotlib
+                # Convert the spectrogram to dB scale for better visualization
+                original_spectrogram_db = torchaudio.transforms.AmplitudeToDB()(original_spectrogram)
+                watermarked_audio_spectrogram_db = torchaudio.transforms.AmplitudeToDB()(watermarked_audio_spectrogram)
+                watermark_wm_spectrogram_db = torchaudio.transforms.AmplitudeToDB()(watermark_wav_spectrogram)
 
-            # Plot the original spectrogram
-            plt.figure(figsize=(10, 4))
-            plt.imshow(original_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto')
-            plt.colorbar(format="%+2.0f dB")
-            plt.title("Original Spectrogram")
-            plt.xlabel("Time")
-            plt.ylabel("Frequency")
+                # Plot the original spectrogram
+                plt.figure(figsize=(10, 4))
+                plt.imshow(original_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto')
+                plt.colorbar(format="%+2.0f dB")
+                plt.title("Original Spectrogram")
+                plt.xlabel("Time")
+                plt.ylabel("Frequency")
 
-            # Save the original spectrogram image
-            original_spectrogram_path = os.path.join(val_spec_pth, "{}_epoch_{}_original_spectrogram.png".
-                                                     format(datetime.datetime.now().strftime("%Y-%m_%d_%H_%M_%S"),
-                                                            ep))
-            plt.savefig(original_spectrogram_path)
-            plt.close()
+                # Save the original spectrogram image
+                original_spectrogram_path = os.path.join(val_spec_pth, "{}_epoch_{}_original_spectrogram.png".
+                                                         format(datetime.datetime.now().strftime("%Y-%m_%d_%H_%M_%S"),
+                                                                ep))
+                plt.savefig(original_spectrogram_path)
+                plt.close()
 
-            # Plot the watermarked audio spectrogram
-            plt.figure(figsize=(10, 4))
-            plt.imshow(watermarked_audio_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto')
-            plt.colorbar(format="%+2.0f dB")
-            plt.title("Watermarked Spectrogram")
-            plt.xlabel("Time")
-            plt.ylabel("Frequency")
+                # Plot the watermarked audio spectrogram
+                plt.figure(figsize=(10, 4))
+                plt.imshow(watermarked_audio_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto')
+                plt.colorbar(format="%+2.0f dB")
+                plt.title("Watermarked Spectrogram")
+                plt.xlabel("Time")
+                plt.ylabel("Frequency")
 
-            # Save the watermarked spectrogram image
-            watermarked_spectrogram_path = os.path.join(val_spec_pth, "{}_epoch_{}_watermarked_spectrogram.png".
-                                                        format(datetime.datetime.now().strftime("%Y-%m_%d_%H_%M_%S"),
-                                                               ep))
-            plt.savefig(watermarked_spectrogram_path)
-            plt.close()
+                # Save the watermarked spectrogram image
+                watermarked_spectrogram_path = os.path.join(val_spec_pth, "{}_epoch_{}_watermarked_spectrogram.png".
+                                                            format(datetime.datetime.now().strftime("%Y-%m_%d_%H_%M_%S"),
+                                                                   ep))
+                plt.savefig(watermarked_spectrogram_path)
+                plt.close()
 
-            # Plot the watermark wm spectrogram
-            plt.figure(figsize=(10, 4))
-            plt.imshow(watermark_wm_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto')
-            plt.colorbar(format="%+2.0f dB")
-            plt.title("Watermarked Spectrogram")
-            plt.xlabel("Time")
-            plt.ylabel("Frequency")
+                # Plot the watermark wm spectrogram
+                plt.figure(figsize=(10, 4))
+                plt.imshow(watermark_wm_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto')
+                plt.colorbar(format="%+2.0f dB")
+                plt.title("Watermarked Spectrogram")
+                plt.xlabel("Time")
+                plt.ylabel("Frequency")
 
-            # Save the watermark wm spectrogram image
-            watermark_wm_spectrogram_path = os.path.join(val_spec_pth, "{}_epoch_{}_watermark_wm_spectrogram.png".
-                                                         format(datetime.datetime.now().
-                                                                strftime("%Y-%m_%d_%H_%M_%S"), ep))
-            plt.savefig(watermark_wm_spectrogram_path)
-            plt.close()
+                # Save the watermark wm spectrogram image
+                watermark_wm_spectrogram_path = os.path.join(val_spec_pth, "{}_epoch_{}_watermark_wm_spectrogram.png".
+                                                             format(datetime.datetime.now().
+                                                                    strftime("%Y-%m_%d_%H_%M_%S"), ep))
+                plt.savefig(watermark_wm_spectrogram_path)
+                plt.close()
 
-            val_audio_table.add_data(ep,
-                                     wandb.Audio(wav_matrix[-1].cpu().numpy(), sample_rate=16000),
-                                     wandb.Audio(watermarked_wav[-1].cpu().numpy(), sample_rate=16000),
-                                     wandb.Audio(wm[-1].cpu().numpy(), sample_rate=16000),
-                                     wandb.Image(original_spectrogram_path),
-                                     wandb.Image(watermarked_spectrogram_path),
-                                     wandb.Image(watermark_wm_spectrogram_path))
+                val_audio_table.add_data(ep,
+                                         wandb.Audio(wav_matrix[-1].cpu().numpy(), sample_rate=16000),
+                                         wandb.Audio(watermarked_wav[-1].cpu().numpy(), sample_rate=16000),
+                                         wandb.Audio(wm[-1].cpu().numpy(), sample_rate=16000),
+                                         wandb.Image(original_spectrogram_path),
+                                         wandb.Image(watermarked_spectrogram_path),
+                                         wandb.Image(watermark_wm_spectrogram_path))
 
             wandb.log({**train_metrics, **val_metrics})
             logging.info("#e" * 60)
