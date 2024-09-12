@@ -36,7 +36,7 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)
 device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu")
 
-logging_mark = "#"*20
+logging_mark = "#" * 20
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 
@@ -66,7 +66,7 @@ def main(configs):
     else:
         index = model_config["test"]["index"]
         model_list = os.listdir(path_model)
-        model_list = sorted(model_list,key=lambda x:os.path.getmtime(os.path.join(path_model,x)))
+        model_list = sorted(model_list, key=lambda x: os.path.getmtime(os.path.join(path_model, x)))
         model_path = os.path.join(path_model, model_list[index])
         logging.info(model_path)
         print(model_path)
@@ -84,9 +84,8 @@ def main(configs):
 
     # ---------------- Embedding
     logging.info(logging_mark + "\t" + "Begin Embedding" + "\t" + logging_mark)
-    wm_path = r"D:/Real-time-Voice-Watermark/results/wm_speech/"
+    wm_path = train_config["path"]["wm_speech"]
     global_step = 0
-    wm_list = []
     with torch.no_grad():
         for sample in track(dev_audios_loader):
             if global_step > 10: break
@@ -95,10 +94,10 @@ def main(configs):
             sample_rate = sample["sample_rate"]
             watermarked_audio, wm = wm_generator(wav_matrix)
             name = sample['name'][0]
-            soundfile.write(os.path.join(wm_path, name), watermarked_audio.cpu().squeeze(0).detach().numpy(), samplerate=sample_rate[0], format="WAV")
-
+            soundfile.write(os.path.join(wm_path, name), watermarked_audio.cpu().squeeze(0).detach().numpy(),
+                            samplerate=sample_rate[0], format="WAV")
             prob, msg = wm_detector.detect_watermark(watermarked_audio)
-            logging.info("-"*100)
+            logging.info("-" * 100)
             logging.info("The watermark probability of the Audio file {0} is {1}, and its decoded message is {2}".
                          format(name, prob, msg))
 
@@ -112,7 +111,3 @@ if __name__ == "__main__":
     configs = (process_config, model_config, train_config)
     main(configs)
     torch.cuda.empty_cache()
-
-
-
-

@@ -2,6 +2,7 @@ dataset: "librispeech"
 
 path:
   raw_path: "/storage/seit-guohanqi/librispeech_dataset/LibriSpeech_wav"
+  # raw_path: "D:/Real-time-Voice-Watermark/dataset/LibriSpeech_wav"
   raw_path_test: "experiments/cloned_speechs"
   mel_path: "./melspectogram_images"
   wm_speech: "./results/wm_speech"
@@ -40,6 +41,6 @@ optimize:
 
 iter:
   epoch: 300
-  save_circle: 5
+  save_circle: 10
   show_circle: 100
   val_circle: 100

@@ -213,6 +213,7 @@ class WatermarkModel(torch.nn.Module):
             return x + alpha * wm, alpha * wm
 
         else:
+            print("None type warning!")
             return None
 
 

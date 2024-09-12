@@ -83,14 +83,14 @@ class Loss(nn.Module):
 
     def en_de_loss(self, x, w_x, wm, prob, labels):
         # 从小数点到db level做mse, regularizer
-        bce_loss = self.bce_loss(prob[:, 0, :], torch.tensor(labels).float().cuda())
+        bce_loss = self.bce_loss(prob[:, 0, :], labels.float())
         l1_loss = self.l1_loss(w_x, x)
         l2_loss = self.l2_loss(w_x, x)
         hybrid_loss_value = self.alpha * l1_loss + self.beta * l2_loss
         percep_loss = perceptual_loss(wm)
-        tvl_loss = tv_loss(w_x)*0.1
-        grad_penalty_loss = gradient_penalty_loss(w_x)*0.001
-        smoothness_loss = tvl_loss + grad_penalty_loss
+        # tvl_loss = tv_loss(wm)*0.1
+        # grad_penalty_loss = gradient_penalty_loss(wm)*0.001
+        smoothness_loss = 0  # tvl_loss + grad_penalty_loss
         freq_loss = frequency_domain_loss(x, w_x)
 
         return hybrid_loss_value, bce_loss, percep_loss, smoothness_loss, freq_loss
