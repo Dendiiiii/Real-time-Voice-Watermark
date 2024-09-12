@@ -1,12 +1,5 @@
 import logging
-from typing import Optional, Tuple
-import os
-from pathlib import Path
-from hashlib import sha1
 from urllib.parse import urlparse  # noqa: F401
-
-import torch
-from torch import Tensor
 from typing import (  # type: ignore[attr-defined]
     Any,
     Dict,
@@ -20,7 +13,6 @@ from typing import (  # type: ignore[attr-defined]
 )
 import julius
 from libs.modules.seanet import *
-from omegaconf import DictConfig, OmegaConf
 
 logger = logging.getLogger("VoiceWatermark")
 
@@ -104,18 +96,6 @@ class WatermarkModel(torch.nn.Module):
     def message(self, message: torch.Tensor) -> None:
         self._message = message
 
-    # def load_generator(self):
-    #     if self.model_name:
-    #         model = torch.load(os.path.join(self.path_model, self.model_name))
-    #     else:
-    #         model_list = os.listdir(self.path_model)
-    #         model_list = sorted(model_list, key=lambda x: os.path.getmtime(os.path.join(self.path_model, x)))
-    #         model_path = os.path.join(self.path_model, model_list[-1])
-    #         logger.info(model_path)
-    #         model = torch.load(model_path)
-    #         logger.info("model <<{}>> loaded".format(model_path))
-    #     self.encoder = model[]
-
     def get_watermark(
             self,
             x: torch.Tensor,
@@ -185,6 +165,7 @@ class WatermarkModel(torch.nn.Module):
             self,
             x: torch.Tensor,
             sample_rate: Optional[int] = 16000,
+            message: Optional[torch.Tensor] = None,
             alpha: float = 1.0
     ):
         """Apply the watermarking to the audio signal x with a tune-down ratio (defaul 1.0)"""
@@ -197,7 +178,8 @@ class WatermarkModel(torch.nn.Module):
 
         if int((x_spect.size(-1) - (204 + self.future_ts)) / 51) > 0:
             for i in range(int((x_spect.size(-1) - (204 + self.future_ts)) / 51)):
-                out = self.get_watermark(x_spect[:, :, :, i * 51:204 + i * 51], sample_rate=sample_rate)
+                out = self.get_watermark(x_spect[:, :, :, i * 51:204 + i * 51], sample_rate=sample_rate,
+                                         message=message)
                 list_of_watermark.append(out)
                 # 2.05s has 2.05*16000 = 32800 samples
                 # n_fft (frame_size) = 320
@@ -306,4 +288,5 @@ class WatermarkDetector(torch.nn.Module):
         x_spect = self.stft(x).permute(0, 3, 1, 2)
         result = self.detector(x_spect)[..., :orig_length]  # b x 2+nbits x length
         result[:, :2, :] = torch.softmax(result[:, :2, :], dim=1)  # Apply softmax
-        return result[:, :2, :], torch.Tensor([0])
+        message = self.decode_message(result[:, 2:, :])  # Decode the message
+        return result[:, :2, :], message

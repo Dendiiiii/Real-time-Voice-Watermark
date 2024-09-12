@@ -81,9 +81,10 @@ class Loss(nn.Module):
         self.l1_loss = nn.L1Loss()
         self.l2_loss = nn.MSELoss()
 
-    def en_de_loss(self, x, w_x, wm, prob, labels):
+    def en_de_loss(self, x, w_x, wm, prob, labels, msg=None):
         # 从小数点到db level做mse, regularizer
         bce_loss = self.bce_loss(prob[:, 0, :], labels.float())
+        # decode_loss = self(msg, )
         l1_loss = self.l1_loss(w_x, x)
         l2_loss = self.l2_loss(w_x, x)
         hybrid_loss_value = self.alpha * l1_loss + self.beta * l2_loss

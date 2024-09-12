@@ -64,7 +64,7 @@ def select_random_chunk(audio_data, percentage=0.8):
         selected_audio = audio_data[i][label_vector[i] == 1]
         selected_audio_batch.append(selected_audio)
 
-    return torch.from_numpy(label_vector).long().to(audio_data.device), torch.stack(selected_audio_batch, dim=0)
+    return torch.from_numpy(label_vector).long(), torch.stack(selected_audio_batch, dim=0)
 
 
 def save_spectrogram_as_img(audio, datadir, sample_rate=16000, plt_type='mel'):
@@ -227,7 +227,7 @@ def main(configs):
 
             prob, msg = wm_detector(substituted_wav_matrix)
 
-            losses = loss.en_de_loss(selected_wav_matrix, watermarked_wav, wm, prob, label_vec)
+            losses = loss.en_de_loss(selected_wav_matrix, watermarked_wav, wm, prob, label_vec, msg)
 
             sum_loss = losses[0] + losses[1] + losses[2] + losses[3] + losses[4]
 
@@ -294,6 +294,8 @@ def main(configs):
 
                 label_vec, selected_wav_matrix = select_random_chunk(wav_matrix)
                 watermarked_wav, wm = wm_generator(selected_wav_matrix)
+
+                label_vec.to(selected_wav_matrix.device)
 
                 # Substitute the selected part of wav_matrix with watermarked_wav
                 substituted_wav_matrix = substitute_watermarked_audio(wav_matrix, watermarked_wav, label_vec)
@@ -418,6 +420,8 @@ def main(configs):
 
             # Substitute the selected part of wav_matrix with watermarked_wav
             substituted_wav_matrix = substitute_watermarked_audio(wav_matrix, watermarked_wav, label_vec)
+
+            label_vec.to(selected_wav_matrix.device)
 
             prob, msg = wm_detector(substituted_wav_matrix)
             losses = loss.en_de_loss(selected_wav_matrix, watermarked_wav, wm, prob, label_vec)
