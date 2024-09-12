@@ -64,7 +64,7 @@ def select_random_chunk(audio_data, percentage=0.8):
         selected_audio = audio_data[i][label_vector[i] == 1]
         selected_audio_batch.append(selected_audio)
 
-    return torch.from_numpy(label_vector).long().cuda(), torch.stack(selected_audio_batch, dim=0)
+    return torch.from_numpy(label_vector).long().to(audio_data.device), torch.stack(selected_audio_batch, dim=0)
 
 
 def save_spectrogram_as_img(audio, datadir, sample_rate=16000, plt_type='mel'):
