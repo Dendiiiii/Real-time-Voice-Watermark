@@ -69,7 +69,6 @@ def main(configs):
         model_list = sorted(model_list, key=lambda x: os.path.getmtime(os.path.join(path_model, x)))
         model_path = os.path.join(path_model, model_list[index])
         logging.info(model_path)
-        print(model_path)
         model = torch.load(model_path)
         logging.info("model <<{}>> loadded".format(model_path))
 

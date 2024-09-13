@@ -6,6 +6,7 @@ path:
   raw_path_test: "experiments/cloned_speechs"
   mel_path: "./melspectogram_images"
   wm_speech: "./results/wm_speech"
+  # wm_speech: "D:/Real-time-Voice-Watermark/melspectogram_images"
   ckpt: "results/ckpt/"
   log_path: "results/log/"
 

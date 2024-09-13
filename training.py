@@ -7,6 +7,8 @@ import torchaudio
 import wandb
 import librosa
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')  # Use a non-interactive backend
 import librosa.feature
 
 from models import WatermarkModel, WatermarkDetector
@@ -64,7 +66,7 @@ def select_random_chunk(audio_data, percentage=0.8):
         selected_audio = audio_data[i][label_vector[i] == 1]
         selected_audio_batch.append(selected_audio)
 
-    return torch.from_numpy(label_vector).long(), torch.stack(selected_audio_batch, dim=0)
+    return torch.from_numpy(label_vector).float().to(audio_data.device), torch.stack(selected_audio_batch, dim=0)
 
 
 def save_spectrogram_as_img(audio, datadir, sample_rate=16000, plt_type='mel'):
@@ -124,7 +126,7 @@ def main(configs):
     assert batch_size < len(train_audios)
     train_audios_loader = DataLoader(train_audios, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
     val_audios_loader = DataLoader(val_audios, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
-    dev_audios_loader = DataLoader(dev_audios, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
+    dev_audios_loader = DataLoader(dev_audios, batch_size=1, shuffle=False, collate_fn=collate_fn)
 
     wandb.login(key="9a11e5364efe3bb8fedb3741188ee0d714e942e2")
     wandb.init(project="real-time-voice-watermark", name='full_run_20_epoch', config={
@@ -190,6 +192,7 @@ def main(configs):
     lambda_e = train_config["optimize"]["lambda_e"]
     lambda_m = train_config["optimize"]["lambda_m"]
     global_step = 0
+    cnt = 0
     interval = math.ceil(len(train_audios_loader) / 30)
     for ep in range(1, epoch_num + 1):
         wm_generator.train()
@@ -206,13 +209,16 @@ def main(configs):
             step += 1
             en_de_op.zero_grad()
             # ------------------- generate watermark
-            wav_matrix = sample['matrix'].to(device)
+            orig_wav_matrix = sample['matrix'].to(device)
+
             physcial_distortions = [4, 5, 6]
             all_distortions = [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 15]
 
             # wav_matrix  # Add random distortion, physical distortion type
             if random.random() < 0.5:
-                wav_matrix = distortions(wav_matrix, random.choice(physcial_distortions))
+                wav_matrix = distortions(orig_wav_matrix, random.choice(physcial_distortions))
+            else:
+                wav_matrix = orig_wav_matrix
 
             label_vec, selected_wav_matrix = select_random_chunk(wav_matrix)
             watermarked_wav, wm = wm_generator(selected_wav_matrix)  # (B, L)
@@ -290,12 +296,13 @@ def main(configs):
             running_freq_loss = 0.0
             for sample in track(val_audios_loader):
                 # ------------------- generate watermark
-                wav_matrix = sample["matrix"].to(device)
+                orig_wav_matrix = sample['matrix'].to(device)
+
+                if True:
+                    wav_matrix = orig_wav_matrix
 
                 label_vec, selected_wav_matrix = select_random_chunk(wav_matrix)
                 watermarked_wav, wm = wm_generator(selected_wav_matrix)
-
-                label_vec.to(selected_wav_matrix.device)
 
                 # Substitute the selected part of wav_matrix with watermarked_wav
                 substituted_wav_matrix = substitute_watermarked_audio(wav_matrix, watermarked_wav, label_vec)
@@ -325,8 +332,8 @@ def main(configs):
                 # Compute the spectrogram
                 spectrogram_transform = torchaudio.transforms.Spectrogram(n_fft=320, hop_length=160)
 
-                original_spectrogram = spectrogram_transform(wav_matrix[-1].cpu())
-                watermarked_audio_spectrogram = spectrogram_transform(watermarked_wav[-1].cpu())
+                original_spectrogram = spectrogram_transform(orig_wav_matrix[-1].cpu())
+                watermarked_audio_spectrogram = spectrogram_transform(substituted_wav_matrix[-1].cpu())
                 watermark_wav_spectrogram = spectrogram_transform(wm[-1].cpu())
 
                 # Convert the spectrogram to a format suitable for matplotlib
@@ -335,9 +342,18 @@ def main(configs):
                 watermarked_audio_spectrogram_db = torchaudio.transforms.AmplitudeToDB()(watermarked_audio_spectrogram)
                 watermark_wm_spectrogram_db = torchaudio.transforms.AmplitudeToDB()(watermark_wav_spectrogram)
 
+                # Set the common x-axis limit based on the original spectrogram
+                x_min, x_max = 0, original_spectrogram_db.shape[-1]  # The number of time frames (x-axis)
+
+                # Get the min and max values from the original spectrogram for consistent scaling
+                vmin = original_spectrogram_db.min().item()
+                vmax = original_spectrogram_db.max().item()
+
                 # Plot the original spectrogram
                 plt.figure(figsize=(10, 4))
-                plt.imshow(original_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto')
+                plt.imshow(original_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto', vmin=vmin,
+                           vmax=vmax)
+                plt.xlim(x_min, x_max)  # Set x-axis limits
                 plt.colorbar(format="%+2.0f dB")
                 plt.title("Original Spectrogram")
                 plt.xlabel("Time")
@@ -352,7 +368,9 @@ def main(configs):
 
                 # Plot the watermarked audio spectrogram
                 plt.figure(figsize=(10, 4))
-                plt.imshow(watermarked_audio_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto')
+                plt.imshow(watermarked_audio_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto',
+                           vmin=vmin, vmax=vmax)
+                plt.xlim(x_min, x_max)  # Set x-axis limits
                 plt.colorbar(format="%+2.0f dB")
                 plt.title("Watermarked Spectrogram")
                 plt.xlabel("Time")
@@ -367,7 +385,9 @@ def main(configs):
 
                 # Plot the watermark wm spectrogram
                 plt.figure(figsize=(10, 4))
-                plt.imshow(watermark_wm_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto')
+                plt.imshow(watermark_wm_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto',
+                           vmin=vmin, vmax=vmax)
+                plt.xlim(x_min, x_max)  # Set x-axis limits
                 plt.colorbar(format="%+2.0f dB")
                 plt.title("Watermarked Spectrogram")
                 plt.xlabel("Time")
@@ -381,7 +401,7 @@ def main(configs):
                 plt.close()
 
                 val_audio_table.add_data(ep,
-                                         wandb.Audio(wav_matrix[-1].cpu().numpy(), sample_rate=16000),
+                                         wandb.Audio(orig_wav_matrix[-1].cpu().numpy(), sample_rate=16000),
                                          wandb.Audio(watermarked_wav[-1].cpu().numpy(), sample_rate=16000),
                                          wandb.Audio(wm[-1].cpu().numpy(), sample_rate=16000),
                                          wandb.Image(original_spectrogram_path),
@@ -413,15 +433,16 @@ def main(configs):
         interval = math.ceil(len(dev_audios_loader) / 5)
         for sample in track(dev_audios_loader):
             steps += 1
-            wav_matrix = sample["matrix"].to(device)
+            orig_wav_matrix = sample["matrix"].to(device)
+
+            if True:
+                wav_matrix = orig_wav_matrix
 
             label_vec, selected_wav_matrix = select_random_chunk(wav_matrix)
             watermarked_wav, wm = wm_generator(selected_wav_matrix)
 
             # Substitute the selected part of wav_matrix with watermarked_wav
             substituted_wav_matrix = substitute_watermarked_audio(wav_matrix, watermarked_wav, label_vec)
-
-            label_vec.to(selected_wav_matrix.device)
 
             prob, msg = wm_detector(substituted_wav_matrix)
             losses = loss.en_de_loss(selected_wav_matrix, watermarked_wav, wm, prob, label_vec)
@@ -435,8 +456,8 @@ def main(configs):
                 # Compute the spectrogram
                 spectrogram_transform = torchaudio.transforms.Spectrogram(n_fft=320, hop_length=160)
 
-                original_spectrogram = spectrogram_transform(wav_matrix[-1].cpu())
-                watermarked_audio_spectrogram = spectrogram_transform(watermarked_wav[-1].cpu())
+                original_spectrogram = spectrogram_transform(orig_wav_matrix[-1].cpu())
+                watermarked_audio_spectrogram = spectrogram_transform(substituted_wav_matrix[-1].cpu())
                 watermark_wav_spectrogram = spectrogram_transform(wm[-1].cpu())
 
                 # Convert the spectrogram to a format suitable for matplotlib
@@ -446,9 +467,18 @@ def main(configs):
                     watermarked_audio_spectrogram)
                 watermark_wm_spectrogram_db = torchaudio.transforms.AmplitudeToDB()(watermark_wav_spectrogram)
 
+                # Set the common x-axis limit based on the original spectrogram
+                x_min, x_max = 0, original_spectrogram_db.shape[-1]  # The number of time frames (x-axis)
+
+                # Get the min and max values from the original spectrogram for consistent scaling
+                vmin = original_spectrogram_db.min().item()
+                vmax = original_spectrogram_db.max().item()
+
                 # Plot the original spectrogram
                 plt.figure(figsize=(10, 4))
-                plt.imshow(original_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto')
+                plt.imshow(original_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto', vmin=vmin,
+                           vmax=vmax)
+                plt.xlim(x_min, x_max)  # Set x-axis limits
                 plt.colorbar(format="%+2.0f dB")
                 plt.title("Original Spectrogram")
                 plt.xlabel("Time")
@@ -463,7 +493,9 @@ def main(configs):
 
                 # Plot the watermarked audio spectrogram
                 plt.figure(figsize=(10, 4))
-                plt.imshow(watermarked_audio_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto')
+                plt.imshow(watermarked_audio_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto',
+                           vmin=vmin, vmax=vmax)
+                plt.xlim(x_min, x_max)  # Set x-axis limits
                 plt.colorbar(format="%+2.0f dB")
                 plt.title("Watermarked Spectrogram")
                 plt.xlabel("Time")
@@ -478,7 +510,9 @@ def main(configs):
 
                 # Plot the watermark wm spectrogram
                 plt.figure(figsize=(10, 4))
-                plt.imshow(watermark_wm_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto')
+                plt.imshow(watermark_wm_spectrogram_db.numpy(), cmap='viridis', origin='lower', aspect='auto',
+                           vmin=vmin, vmax=vmax)
+                plt.xlim(x_min, x_max)  # Set x-axis limits
                 plt.colorbar(format="%+2.0f dB")
                 plt.title("Watermarked Spectrogram")
                 plt.xlabel("Time")
@@ -492,7 +526,7 @@ def main(configs):
                 plt.savefig(watermark_wm_spectrogram_path)
                 plt.close()
 
-                test_audio_table.add_data(wandb.Audio(wav_matrix[-1].cpu().numpy(), sample_rate=16000),
+                test_audio_table.add_data(wandb.Audio(orig_wav_matrix[-1].cpu().numpy(), sample_rate=16000),
                                           wandb.Audio(watermarked_wav[-1].cpu().numpy(), sample_rate=16000),
                                           wandb.Audio(wm[-1].cpu().numpy(), sample_rate=16000,),
                                           wandb.Image(original_spectrogram_path),

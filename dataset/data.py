@@ -79,7 +79,8 @@ class wav_dataset(Dataset):
             if wav.shape[1] > self.max_len:
                 cuted_len = random.randint(5*sr, self.max_len)
                 wav = wav[:, :cuted_len]
-            wav = self.resample(wav[0, :].view(1, -1))
+            if sr != self.sample_rate:
+                wav = self.resample(wav[0, :].view(1, -1))
             sample = {
                 "matrix": wav,
                 "sample_rate": sr,

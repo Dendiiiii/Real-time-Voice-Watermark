@@ -12,6 +12,8 @@ from typing import (  # type: ignore[attr-defined]
     cast,
 )
 import julius
+import torch
+
 from libs.modules.seanet import *
 
 logger = logging.getLogger("VoiceWatermark")
@@ -256,7 +258,7 @@ class WatermarkDetector(torch.nn.Module):
             The message of size batch x nbits, indicating probability of 1 for each bit
         """
         assert (result.dim() > 2 and result.shape[1] == self.nbits) or (
-            self.dim() == 2 and result.shape[0] == self.nbits
+            result.dim() == 2 and result.shape[0] == self.nbits
         ), f"Expect message of size [,{self.nbits}, frames] (get {result.size()})"
         decoded_message = result.mean(dim=-1)
         return torch.sigmoid(decoded_message)
@@ -288,5 +290,5 @@ class WatermarkDetector(torch.nn.Module):
         x_spect = self.stft(x).permute(0, 3, 1, 2)
         result = self.detector(x_spect)[..., :orig_length]  # b x 2+nbits x length
         result[:, :2, :] = torch.softmax(result[:, :2, :], dim=1)  # Apply softmax
-        message = self.decode_message(result[:, 2:, :])  # Decode the message
-        return result[:, :2, :], message
+        # message = self.decode_message(result[:, 2:, :])  # Decode the message
+        return result[:, :2, :], torch.tensor([0])
