@@ -126,7 +126,7 @@ def main(configs):
     assert batch_size < len(train_audios)
     train_audios_loader = DataLoader(train_audios, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
     val_audios_loader = DataLoader(val_audios, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
-    dev_audios_loader = DataLoader(dev_audios, batch_size=1, shuffle=False, collate_fn=collate_fn)
+    dev_audios_loader = DataLoader(dev_audios, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
 
     wandb.login(key="9a11e5364efe3bb8fedb3741188ee0d714e942e2")
     wandb.init(project="real-time-voice-watermark", name='full_run_20_epoch', config={
