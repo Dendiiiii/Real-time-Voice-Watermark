@@ -71,7 +71,6 @@ def frequency_domain_loss(x, w_x):
     return frequency_loss
 
 
-
 class Loss(nn.Module):
     def __init__(self, alpha=0.5, beta=0.5):
         super(Loss, self).__init__()
@@ -94,4 +93,4 @@ class Loss(nn.Module):
         smoothness_loss = 0  # tvl_loss + grad_penalty_loss
         freq_loss = frequency_domain_loss(x, w_x)
 
-        return hybrid_loss_value, bce_loss, percep_loss, smoothness_loss, freq_loss
+        return hybrid_loss_value*0, bce_loss, percep_loss*0.035, smoothness_loss, freq_loss*0

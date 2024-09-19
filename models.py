@@ -26,7 +26,6 @@ class MsgProcessor(torch.nn.Module):
         nbits: Number of bits used to generate the message. Must be non-zero
         hidden_size: Dimension of the encoder output.
     """
-
     def __init__(self, nbits: int, hidden_size: int):
         super().__init__()
         assert nbits > 0, "MsgProcessor should not be built in 0bit watermarking"
@@ -121,6 +120,7 @@ class WatermarkModel(torch.nn.Module):
             x = julius.resample_frac(x, old_sr=sample_rate, new_sr=16000)
         hidden = self.encoder(x)
         hidden = hidden.reshape(x.shape[0], 1, 512)
+
         if self.msg_processor is not None:
             if message is None:
                 if self.message is None:
@@ -132,6 +132,7 @@ class WatermarkModel(torch.nn.Module):
             else:
                 message = message.to(device=x.device)
             hidden = self.msg_processor(hidden, message)
+
         watermark = self.decoder(hidden)
 
         if sample_rate != 16000:
@@ -184,7 +185,7 @@ class WatermarkModel(torch.nn.Module):
                                          message=message)
                 list_of_watermark.append(out)
                 # 2.05s has 2.05*16000 = 32800 samples
-                # n_fft (frame_size) = 320
+                # n_fft (frame_size) = 320dis
                 # hop_length = 160
                 # frames = (32800-320)/160 + 1 = 204 frames
                 # freq_bins = n_fft (frame_size) // 2 + 1 = 161

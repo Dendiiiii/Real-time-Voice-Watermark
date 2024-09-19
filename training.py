@@ -154,7 +154,8 @@ def main(configs):
 
     wm_generator = WatermarkModel(encoder=encoder, decoder=decoder, msg_processor=msgprocessor,
                                   model_config=model_config).to(device)
-    wm_detector = WatermarkDetector(detector=detector, nbits=train_config["watermark"]["nbits"], model_config=model_config).to(device)
+    wm_detector = WatermarkDetector(detector=detector, nbits=train_config["watermark"]["nbits"],
+                                    model_config=model_config).to(device)
 
     # ------------------- optimizer
     en_de_op = AdamW(
@@ -282,8 +283,8 @@ def main(configs):
                 os.path.join(path, "real_time_voice_watermark_ep_{}_{}.pth.tar".
                              format(ep, datetime.datetime.now().strftime("%Y-%m_%d_%H_%M_%S")))
             )
-            shutil.copyfile(os.path.realpath(__file__),
-                            os.path.join(path, os.path.basename(os.path.realpath(__file__))))  # save training script
+            # shutil.copyfile(os.path.realpath(__file__),
+            #                 os.path.join(path, os.path.basename(os.path.realpath(__file__))))  # save training script
 
         # ------------------- validation stage
         with torch.no_grad():
@@ -378,8 +379,8 @@ def main(configs):
 
                 # Save the watermarked spectrogram image
                 watermarked_spectrogram_path = os.path.join(val_spec_pth, "{}_epoch_{}_watermarked_spectrogram.png".
-                                                            format(datetime.datetime.now().strftime("%Y-%m_%d_%H_%M_%S"),
-                                                                   ep))
+                                                            format(datetime.datetime.now().
+                                                                   strftime("%Y-%m_%d_%H_%M_%S"), ep))
                 plt.savefig(watermarked_spectrogram_path)
                 plt.close()
 
