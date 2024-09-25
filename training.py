@@ -1,24 +1,14 @@
-import json
 import os
-import shutil
-
-import torchaudio
-
 import wandb
+import soundfile
 import librosa
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use('Agg')  # Use a non-interactive backend
 import librosa.feature
-
-from models import WatermarkModel, WatermarkDetector
-import torch
-import numpy as np
 import datetime
 from rich.progress import track
 from torch.utils.data import DataLoader
 from dataset.data import collate_fn, wav_dataset as my_dataset
-
 from Distortions.distortions import *
 from models import *
 import yaml
@@ -30,6 +20,7 @@ from itertools import chain
 import logging
 import random
 
+matplotlib.use('Agg')  # Use a non-interactive backend
 seed = 2022
 random.seed(seed)
 np.random.seed(seed)
@@ -38,7 +29,7 @@ torch.cuda.manual_seed(seed)
 logging_mark = "#" * 20
 logging.basicConfig(filename="mylog_{}.log".format(datetime.datetime.now().strftime("%Y-%m_%d_%H_%M_%S")),
                     level=logging.INFO, format="%(message)s")
-device = torch.device("cuda:7" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def select_random_chunk(audio_data, percentage=0.8):
@@ -128,27 +119,26 @@ def main(configs):
     val_audios_loader = DataLoader(val_audios, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
     dev_audios_loader = DataLoader(dev_audios, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
 
-    wandb.login(key="9a11e5364efe3bb8fedb3741188ee0d714e942e2")
-    wandb.init(project="real-time-voice-watermark", name='full_run_20_epoch', config={
-        "learning_rate": train_config["optimize"]["lr"],
-        "dataset": "LibriSpeech",
-        "epochs": train_config["iter"]["epoch"],
-    })
-    val_audio_table = wandb.Table(columns=['ep', 'Original Audio', "Watermarked Audio", "Watermark Waveform",
-                                           "Original Spectrogram", "Watermarked Audio Spectrogram",
-                                           "Watermarked Waveform Spectrogram"])
-    test_audio_table = wandb.Table(columns=['Original Audio', "Watermarked Audio", "Watermark Waveform",
-                                            "Original Spectrogram", "Watermarked_Audio Spectrogram",
-                                            "Watermarked Waveform Spectrogram"])
-    test_loss_summary_table = wandb.Table(columns=['test_l1_loss', "test_bce_loss", "test_perceptual_loss",
-                                                   "test_freq_loss", "test_total_loss"])
+    # wandb.login(key="9a11e5364efe3bb8fedb3741188ee0d714e942e2")
+    # wandb.init(project="real-time-voice-watermark", name='full_run_20_epoch', config={
+    #     "learning_rate": train_config["optimize"]["lr"],
+    #     "dataset": "LibriSpeech",
+    #     "epochs": train_config["iter"]["epoch"],
+    # })
+    # val_audio_table = wandb.Table(columns=['ep', 'Original Audio', "Watermarked Audio", "Watermark Waveform",
+    #                                        "Original Spectrogram", "Watermarked Audio Spectrogram",
+    #                                        "Watermarked Waveform Spectrogram"])
+    # test_audio_table = wandb.Table(columns=['Original Audio', "Watermarked Audio", "Watermark Waveform",
+    #                                         "Original Spectrogram", "Watermarked_Audio Spectrogram",
+    #                                         "Watermarked Waveform Spectrogram"])
+    # test_loss_summary_table = wandb.Table(columns=['test_l1_loss', "test_bce_loss", "test_perceptual_loss",
+    #                                                "test_freq_loss", "test_total_loss"])
 
     encoder = SimpleEncoder()
     decoder = SimpleDecoder()
     detector = SimpleDetector()
 
-    msgprocessor = MsgProcessor(nbits=train_config["watermark"]["nbits"], hidden_size=1)
-    msgprocessor = msgprocessor.to(device)
+    msgprocessor = MsgProcessor(nbits=train_config["watermark"]["nbits"], hidden_size=1).to(device)
 
     distortions = distortion()
 
@@ -204,6 +194,7 @@ def main(configs):
         running_perceptual_loss = 0.0
         # running_smoothness_loss = 0.0
         running_freq_loss = 0.0
+        running_ber = 0.0
         logging.info("Epoch {}/{}".format(ep, epoch_num))
         for sample in track(train_audios_loader):
             global_step += 1
@@ -222,7 +213,10 @@ def main(configs):
                 wav_matrix = orig_wav_matrix
 
             label_vec, selected_wav_matrix = select_random_chunk(wav_matrix)
-            watermarked_wav, wm = wm_generator(selected_wav_matrix)  # (B, L)
+
+            msg = torch.randint(0, 2, (selected_wav_matrix.shape[0], train_config["watermark"]["nbits"]),
+                                device=device).float()
+            watermarked_wav, wm = wm_generator(selected_wav_matrix, message=msg)  # (B, L)
 
             # watermarked_wav  # Add random distortion
             # if random.random() < 0.5:
@@ -232,9 +226,19 @@ def main(configs):
             # substituted_wav_matrix has the same shape as wav_matrix
             substituted_wav_matrix = substitute_watermarked_audio(wav_matrix, watermarked_wav, label_vec)
 
-            prob, msg = wm_detector(substituted_wav_matrix)
+            prob, decoded_msg = wm_detector(substituted_wav_matrix)
 
-            losses = loss.en_de_loss(selected_wav_matrix, watermarked_wav, wm, prob, label_vec, msg)
+            losses = loss.en_de_loss(selected_wav_matrix, watermarked_wav, wm, prob, label_vec, decoded_msg, msg)
+
+            # Convert probabilities to binary values (0 or 1) using a threshold of 0.5
+            predicted_bits = (decoded_msg > 0.5).float()
+
+            # Calculate the number of bit errors
+            bit_errors = torch.sum(predicted_bits != msg).item()
+
+            # Calculate BER
+            total_bits = msg.size(0)  # Total number of bits
+            ber = bit_errors / total_bits
 
             sum_loss = losses[0] + losses[1] + losses[2] + losses[3] + losses[4]
 
@@ -246,15 +250,17 @@ def main(configs):
             running_perceptual_loss += losses[2]
             # running_smoothness_loss += losses[3]
             running_freq_loss += losses[4]
+            running_ber += ber
 
             if step % show_circle == 0:
                 logging.info("-" * 100)
                 logging.info("training_step:{} - l1_loss:{:.8f} - binary_cross_entropy_loss:{:.8f} - "
-                             "perceptual_loss:{:.8f} - freq_loss:{:.8f}".format(step,
-                                                                                losses[0],
-                                                                                losses[1],
-                                                                                losses[2],
-                                                                                losses[4]))
+                             "perceptual_loss:{:.8f} - freq_loss:{:.8f} - Bit Error Rate:{:.8f}".format(step,
+                                                                                                        losses[0],
+                                                                                                        losses[1],
+                                                                                                        losses[2],
+                                                                                                        losses[4],
+                                                                                                        ber))
 
         train_l1_loss = running_l1_loss / len(train_audios_loader)
         train_bce_loss = running_binary_cross_entropy_loss / len(train_audios_loader)
@@ -262,16 +268,18 @@ def main(configs):
         # train_smoothness_loss = running_smoothness_loss / len(train_audios_loader)
         train_freq_loss = running_freq_loss / len(train_audios_loader)
         train_total_loss = (train_l1_loss + train_bce_loss + train_perceptual_loss + train_freq_loss)
+        train_ber = running_ber / len(train_audios_loader)
         logging.info("t" * 60)
         logging.info("train_epoch:{} - l1_loss:{:.8f} - bce_loss:{:.8f} - perceptual_loss:{:.8f} - "
-                     "train_freq_loss:{:.8f} - total_loss:{:.8f}".
-                     format(ep, train_l1_loss, train_bce_loss, train_perceptual_loss, train_freq_loss,
+                     "train_freq_loss:{:.8f} - train_ber:{:.8f} - total_loss:{:.8f}".
+                     format(ep, train_l1_loss, train_bce_loss, train_perceptual_loss, train_freq_loss, train_ber,
                             train_total_loss))
 
         train_metrics = {"train/train_l1_loss": train_l1_loss,
                          "train/train_bce_loss": train_bce_loss,
                          "train/train_perceptual_loss": train_perceptual_loss,
                          "train/train_freq_loss": train_freq_loss,
+                         "train/train_BER": train_ber,
                          "train/total_loss": train_total_loss}
 
         if ep % save_circle == 0:
@@ -294,6 +302,7 @@ def main(configs):
             running_bce = 0.0
             running_perceptual_loss = 0.0
             # running_smoothness_loss = 0.0
+            running_ber = 0.0
             running_freq_loss = 0.0
             for sample in track(val_audios_loader):
                 # ------------------- generate watermark
@@ -303,17 +312,33 @@ def main(configs):
                     wav_matrix = orig_wav_matrix
 
                 label_vec, selected_wav_matrix = select_random_chunk(wav_matrix)
-                watermarked_wav, wm = wm_generator(selected_wav_matrix)
+
+                msg = torch.randint(0, 2, (selected_wav_matrix.shape[0], train_config["watermark"]["nbits"]),
+                                    device=device).float()
+
+                watermarked_wav, wm = wm_generator(selected_wav_matrix, message=msg)
 
                 # Substitute the selected part of wav_matrix with watermarked_wav
                 substituted_wav_matrix = substitute_watermarked_audio(wav_matrix, watermarked_wav, label_vec)
 
-                prob, msg = wm_detector(substituted_wav_matrix)
-                losses = loss.en_de_loss(selected_wav_matrix, watermarked_wav, wm, prob, label_vec)
+                prob, decoded_msg = wm_detector(substituted_wav_matrix)
+                losses = loss.en_de_loss(selected_wav_matrix, watermarked_wav, wm, prob, label_vec, decoded_msg, msg)
+
+                # Convert probabilities to binary values (0 or 1) using a threshold of 0.5
+                predicted_bits = (decoded_msg > 0.5).float()
+
+                # Calculate the number of bit errors
+                bit_errors = torch.sum(predicted_bits != msg).item()
+
+                # Calculate BER
+                total_bits = msg.size(0)  # Total number of bits
+                ber = bit_errors / total_bits
+
                 running_l1_loss += losses[0]
                 running_bce += losses[1]
                 running_perceptual_loss += losses[2]
                 # running_smoothness_loss += losses[3]
+                running_ber += ber
                 running_freq_loss += losses[4]
 
             val_l1_loss = running_l1_loss / len(val_audios_loader)
@@ -321,12 +346,14 @@ def main(configs):
             val_perceptual_loss = running_perceptual_loss / len(val_audios_loader)
             # val_smoothness_loss = running_smoothness_loss / len(val_audios_loader)
             val_freq_loss = running_freq_loss / len(val_audios_loader)
+            val_ber = running_ber / len(val_audios_loader)
             val_total_loss = val_l1_loss + val_bce_loss + val_perceptual_loss + val_freq_loss
 
             val_metrics = {"val/val_l1_loss": val_l1_loss,
                            "val/val_bce_loss": val_bce_loss,
                            "val/val_perceptual_loss": val_perceptual_loss,
                            "val/val_freq_loss": val_freq_loss,
+                           "val/val_BER": val_ber,
                            "val/val_total_loss": val_total_loss}
 
             if ep % interval == 0:
@@ -362,8 +389,8 @@ def main(configs):
 
                 # Save the original spectrogram image
                 original_spectrogram_path = os.path.join(val_spec_pth, "{}_epoch_{}_original_spectrogram.png".
-                                                         format(datetime.datetime.now().strftime("%Y-%m_%d_%H_%M_%S"),
-                                                                ep))
+                                                         format(datetime.datetime.now().
+                                                                strftime("%Y-%m_%d_%H_%M_%S"), ep))
                 plt.savefig(original_spectrogram_path)
                 plt.close()
 
@@ -373,14 +400,15 @@ def main(configs):
                            vmin=vmin, vmax=vmax)
                 plt.xlim(x_min, x_max)  # Set x-axis limits
                 plt.colorbar(format="%+2.0f dB")
-                plt.title("Watermarked Spectrogram")
+                plt.title("Watermarked Audio Spectrogram")
                 plt.xlabel("Time")
                 plt.ylabel("Frequency")
 
                 # Save the watermarked spectrogram image
-                watermarked_spectrogram_path = os.path.join(val_spec_pth, "{}_epoch_{}_watermarked_spectrogram.png".
-                                                            format(datetime.datetime.now().
-                                                                   strftime("%Y-%m_%d_%H_%M_%S"), ep))
+                watermarked_spectrogram_path = os.path.join(val_spec_pth,
+                                                            "{}_epoch_{}_watermarked_audio_spectrogram.png".format(
+                                                                datetime.datetime.now().strftime(
+                                                                    "%Y-%m_%d_%H_%M_%S"), ep))
                 plt.savefig(watermarked_spectrogram_path)
                 plt.close()
 
@@ -390,35 +418,36 @@ def main(configs):
                            vmin=vmin, vmax=vmax)
                 plt.xlim(x_min, x_max)  # Set x-axis limits
                 plt.colorbar(format="%+2.0f dB")
-                plt.title("Watermarked Spectrogram")
+                plt.title("Watermark Spectrogram")
                 plt.xlabel("Time")
                 plt.ylabel("Frequency")
 
                 # Save the watermark wm spectrogram image
-                watermark_wm_spectrogram_path = os.path.join(val_spec_pth, "{}_epoch_{}_watermark_wm_spectrogram.png".
+                watermark_wm_spectrogram_path = os.path.join(val_spec_pth, "{}_epoch_{}_watermark_spectrogram.png".
                                                              format(datetime.datetime.now().
                                                                     strftime("%Y-%m_%d_%H_%M_%S"), ep))
                 plt.savefig(watermark_wm_spectrogram_path)
                 plt.close()
 
-                val_audio_table.add_data(ep,
-                                         wandb.Audio(orig_wav_matrix[-1].cpu().numpy(), sample_rate=16000),
-                                         wandb.Audio(watermarked_wav[-1].cpu().numpy(), sample_rate=16000),
-                                         wandb.Audio(wm[-1].cpu().numpy(), sample_rate=16000),
-                                         wandb.Image(original_spectrogram_path),
-                                         wandb.Image(watermarked_spectrogram_path),
-                                         wandb.Image(watermark_wm_spectrogram_path))
+                # val_audio_table.add_data(ep,
+                #                          wandb.Audio(orig_wav_matrix[-1].cpu().numpy(), sample_rate=16000),
+                #                          wandb.Audio(watermarked_wav[-1].cpu().numpy(), sample_rate=16000),
+                #                          wandb.Audio(wm[-1].cpu().numpy(), sample_rate=16000),
+                #                          wandb.Image(original_spectrogram_path),
+                #                          wandb.Image(watermarked_spectrogram_path),
+                #                          wandb.Image(watermark_wm_spectrogram_path))
 
-            wandb.log({**train_metrics, **val_metrics})
+            # wandb.log({**train_metrics, **val_metrics})
             logging.info("#e" * 60)
             logging.info("eval_epoch:{} - l1_loss:{:.8f} - bce_loss:{:.8f} - perceptual_loss:{:.8f} - "
-                         "freq_loss:{:.8f} - total_loss:{:.8f}".format(ep,
-                                                                       val_l1_loss,
-                                                                       val_bce_loss,
-                                                                       val_perceptual_loss,
-                                                                       val_freq_loss,
-                                                                       val_total_loss))
-    wandb.log({'val_audio_table': val_audio_table})
+                         "freq_loss:{:.8f} - ber:{:.8f} - total_loss:{:.8f}".format(ep,
+                                                                                    val_l1_loss,
+                                                                                    val_bce_loss,
+                                                                                    val_perceptual_loss,
+                                                                                    val_freq_loss,
+                                                                                    val_ber,
+                                                                                    val_total_loss))
+    # wandb.log({'val_audio_table': val_audio_table})
 
     # ------------------- test stage
 
@@ -429,6 +458,7 @@ def main(configs):
         running_bce_loss = 0.0
         running_perceptual_loss = 0.0
         # running_smoothness_loss = 0.0
+        running_ber = 0.0
         running_freq_loss = 0.0
         steps = 0
         interval = math.ceil(len(dev_audios_loader) / 5)
@@ -440,20 +470,44 @@ def main(configs):
                 wav_matrix = orig_wav_matrix
 
             label_vec, selected_wav_matrix = select_random_chunk(wav_matrix)
-            watermarked_wav, wm = wm_generator(selected_wav_matrix)
+
+            msg = torch.randint(0, 2, (selected_wav_matrix.shape[0], train_config["watermark"]["nbits"]),
+                                device=device).float()
+
+            watermarked_wav, wm = wm_generator(selected_wav_matrix, message=msg)
 
             # Substitute the selected part of wav_matrix with watermarked_wav
             substituted_wav_matrix = substitute_watermarked_audio(wav_matrix, watermarked_wav, label_vec)
 
-            prob, msg = wm_detector(substituted_wav_matrix)
-            losses = loss.en_de_loss(selected_wav_matrix, watermarked_wav, wm, prob, label_vec)
+            prob, decoded_msg = wm_detector(substituted_wav_matrix)
+            losses = loss.en_de_loss(selected_wav_matrix, watermarked_wav, wm, prob, label_vec, decoded_msg, msg)
+
+            # Convert probabilities to binary values (0 or 1) using a threshold of 0.5
+            predicted_bits = (decoded_msg > 0.5).float()
+
+            # Calculate the number of bit errors
+            bit_errors = torch.sum(predicted_bits != msg).item()
+
+            # Calculate BER
+            total_bits = msg.size(0)  # Total number of bits
+            ber = bit_errors / total_bits
+
             running_l1_loss += losses[0]
             running_bce_loss += losses[1]
             running_perceptual_loss += losses[2]
             # running_smoothness_loss += losses[3]
+            running_ber += ber
             running_freq_loss += losses[4]
 
             if steps % interval == 0:
+                soundfile.write(os.path.join("./results/wm_speech", "selected_original.wav"),
+                                selected_wav_matrix[-1].cpu().squeeze(0).detach().numpy(),
+                                samplerate=16000, format="WAV")
+                soundfile.write(os.path.join("./results/wm_speech", "watermark.wav"),
+                                wm[-1].cpu().squeeze(0).detach().numpy(), samplerate=16000, format="WAV")
+                soundfile.write(os.path.join("./results/wm_speech", "watermarked.wav"),
+                                watermarked_wav[-1].cpu().squeeze(0).detach().numpy(), samplerate=16000, format="WAV")
+
                 # Compute the spectrogram
                 spectrogram_transform = torchaudio.transforms.Spectrogram(n_fft=320, hop_length=160)
 
@@ -498,12 +552,12 @@ def main(configs):
                            vmin=vmin, vmax=vmax)
                 plt.xlim(x_min, x_max)  # Set x-axis limits
                 plt.colorbar(format="%+2.0f dB")
-                plt.title("Watermarked Spectrogram")
+                plt.title("Watermarked Audio Spectrogram")
                 plt.xlabel("Time")
                 plt.ylabel("Frequency")
 
                 # Save the watermarked audio spectrogram image
-                watermarked_spectrogram_path = os.path.join(test_spec_pth, "{}_watermarked_spectrogram.png"
+                watermarked_spectrogram_path = os.path.join(test_spec_pth, "{}_watermarked_audio_spectrogram.png"
                                                             .format(datetime.datetime.now().
                                                                     strftime("%Y-%m_%d_%H_%M_%S")))
                 plt.savefig(watermarked_spectrogram_path)
@@ -515,43 +569,45 @@ def main(configs):
                            vmin=vmin, vmax=vmax)
                 plt.xlim(x_min, x_max)  # Set x-axis limits
                 plt.colorbar(format="%+2.0f dB")
-                plt.title("Watermarked Spectrogram")
+                plt.title("Watermark Spectrogram")
                 plt.xlabel("Time")
                 plt.ylabel("Frequency")
 
                 # Save the watermark wm spectrogram image
                 watermark_wm_spectrogram_path = os.path.join(test_spec_pth,
-                                                             "{}_watermark_wm_spectrogram.png".
+                                                             "{}_watermark_spectrogram.png".
                                                              format(datetime.datetime.now().
                                                                     strftime("%Y-%m_%d_%H_%M_%S")))
                 plt.savefig(watermark_wm_spectrogram_path)
                 plt.close()
 
-                test_audio_table.add_data(wandb.Audio(orig_wav_matrix[-1].cpu().numpy(), sample_rate=16000),
-                                          wandb.Audio(watermarked_wav[-1].cpu().numpy(), sample_rate=16000),
-                                          wandb.Audio(wm[-1].cpu().numpy(), sample_rate=16000,),
-                                          wandb.Image(original_spectrogram_path),
-                                          wandb.Image(watermarked_spectrogram_path),
-                                          wandb.Image(watermark_wm_spectrogram_path))
+                # test_audio_table.add_data(wandb.Audio(orig_wav_matrix[-1].cpu().numpy(), sample_rate=16000),
+                #                           wandb.Audio(watermarked_wav[-1].cpu().numpy(), sample_rate=16000),
+                #                           wandb.Audio(wm[-1].cpu().numpy(), sample_rate=16000,),
+                #                           wandb.Image(original_spectrogram_path),
+                #                           wandb.Image(watermarked_spectrogram_path),
+                #                           wandb.Image(watermark_wm_spectrogram_path))
 
         test_l1_loss = running_l1_loss / len(dev_audios_loader)
         test_bce_loss = running_bce / len(dev_audios_loader)
         test_perceptual_loss = running_perceptual_loss / len(dev_audios_loader)
         test_freq_loss = running_freq_loss / len(dev_audios_loader)
+        test_ber = running_ber / len(dev_audios_loader)
         test_total_loss = test_l1_loss + test_bce_loss + test_perceptual_loss + test_freq_loss
 
-        test_loss_summary_table.add_data(test_l1_loss, test_bce_loss, test_perceptual_loss, test_freq_loss,
-                                         test_total_loss)
-
-        wandb.log({"test_audio_table": test_audio_table, "test_loss_summary_table": test_loss_summary_table})
+        # test_loss_summary_table.add_data(test_l1_loss, test_bce_loss, test_perceptual_loss, test_freq_loss, test_ber
+        #                                  test_total_loss)
+        #
+        # wandb.log({"test_audio_table": test_audio_table, "test_loss_summary_table": test_loss_summary_table})
         logging.info("#test#" * 20)
-        logging.info("test l1_loss:{:.8f} - binary_cross_entropy_loss:{:.8f} - perceptual_loss:{:.8f} - "
-                     "freq_loss:{:.8f} - total_loss:{:.8f}".format(test_l1_loss,
-                                                                   test_bce_loss,
-                                                                   test_perceptual_loss,
-                                                                   test_freq_loss,
-                                                                   test_total_loss))
-    wandb.finish()
+        logging.info("test l1_loss:{:.8f} - BCE_loss:{:.8f} - perceptual_loss:{:.8f} - "
+                     "freq_loss:{:.8f} - BER:{:.8f} - total_loss:{:.8f}".format(test_l1_loss,
+                                                                                test_bce_loss,
+                                                                                test_perceptual_loss,
+                                                                                test_freq_loss,
+                                                                                test_ber,
+                                                                                test_total_loss))
+    # wandb.finish()
 
 
 if __name__ == "__main__":

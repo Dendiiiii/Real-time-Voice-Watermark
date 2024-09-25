@@ -1,19 +1,6 @@
-import json
 import os
-import shutil
-
 import soundfile
-import torchaudio
 
-import wandb
-import librosa
-import matplotlib.pyplot as plt
-import librosa.feature
-
-from models import WatermarkModel, WatermarkDetector
-import torch
-import numpy as np
-import datetime
 from rich.progress import track
 from torch.utils.data import DataLoader
 from dataset.data import collate_fn, wav_dataset as my_dataset
@@ -34,7 +21,7 @@ random.seed(seed)
 np.random.seed(seed)
 torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)
-device = torch.device("cuda:7" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 logging_mark = "#" * 20
 logging.basicConfig(level=logging.INFO, format='%(message)s')

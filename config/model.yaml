@@ -1,3 +1,5 @@
+power: 1.0
+
 test:
   model_path: "./results/ckpt/"
   model_name: False

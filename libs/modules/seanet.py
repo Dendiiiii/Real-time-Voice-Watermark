@@ -71,6 +71,7 @@ class SimpleDecoder(nn.Module):
         up3 = self.up3(up2)
         up4 = self.up4(up3)
         up5 = self.linear(up4)
+
         return up5
 
 

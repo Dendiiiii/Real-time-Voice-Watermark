@@ -12,7 +12,6 @@ from typing import (  # type: ignore[attr-defined]
     cast,
 )
 import julius
-import torch
 
 from libs.modules.seanet import *
 
@@ -67,7 +66,6 @@ class WatermarkModel(torch.nn.Module):
             hop_length: int = np.prod(list(reversed([8, 5, 4]))),
             future_ts: float = 50,
             future: bool = True,
-            power: float = 0.008,
             wandb: bool = False,
             msg_processor: Optional[torch.nn.Module] = None
     ):
@@ -76,7 +74,7 @@ class WatermarkModel(torch.nn.Module):
         self.decoder = decoder
         self.n_fft = n_fft
         self.hop_length = hop_length
-        self.power = power
+
         self.CEloss = torch.nn.CrossEntropyLoss()
         self.future_ts = future_ts
         self.future = future
@@ -85,6 +83,7 @@ class WatermarkModel(torch.nn.Module):
         self.path_model = model_config["test"]["model_path"]
         self.model_name = model_config["test"]["model_name"]
         self.index = model_config["test"]
+        self.power = model_config["power"]
 
         self.msg_processor = msg_processor
         self._message: Optional[torch.Tensor] = None
@@ -142,27 +141,37 @@ class WatermarkModel(torch.nn.Module):
 
         return watermark[..., :length]
 
-    def pad_w_zeros(
+    def pad_w_zeros_stft(
             self,
             x: torch.Tensor,
-            watermark_wav: torch.Tensor
+            watermark_stft: torch.Tensor
     ) -> torch.Tensor:
         if not self.future:
-            zeros = torch.zeros(x.size(0), x.size(1) - watermark_wav.size(1) - 204).to(x.device)
-            actual_watermark_wav = torch.cat([torch.zeros(x.size(0), 204).to(x.device), watermark_wav, zeros],
-                                             dim=1) + 1e-9
+            zeros = torch.zeros(x.size(0), x.size(1), x.size(2),
+                                x.size(3) - watermark_stft.size(3) - 204).to(x.device)
+            actual_watermark_stft = torch.cat([torch.zeros(x.size(0), 2, 161, 204).to(x.device), watermark_stft,
+                                              zeros], dim=3) + 1e-9
         else:
-            zeros = torch.zeros(x.size(0), x.size(1) - watermark_wav.size(1) - (204 + self.future_ts)).to(x.device)
-            actual_watermark_wav = torch.cat(
-                [torch.zeros(x.size(0), (204 + self.future_ts)).to(x.device), watermark_wav, zeros],
-                dim=1) + 1e-9
-        return actual_watermark_wav
+            zeros = torch.zeros(x.size(0), x.size(1), x.size(2),
+                                x.size(3) - watermark_stft.size(1) - (204 + self.future_ts)).to(x.device)
+            actual_watermark_stft = torch.cat(
+                [torch.zeros(x.size(0), 2, 161, (204 + self.future_ts)).to(x.device), watermark_stft, zeros],
+                dim=3) + 1e-9
+        return actual_watermark_stft
 
     def stft(self, x):
         window = torch.hann_window(self.n_fft).to(x.device)
         tmp = torch.stft(x, n_fft=self.n_fft, hop_length=self.hop_length, window=window, return_complex=True)
         tmp = torch.view_as_real(tmp)
         return tmp
+
+    def istft(self, x):
+        # Convert from (real, imag) to complex
+        x_complex = torch.view_as_complex(x)
+        window = torch.hann_window(self.n_fft).to(x.device)
+        # Inverse STFT to reconstruct the time-domain signal
+        x_reconstructed = torch.istft(x_complex, n_fft=self.n_fft, hop_length=self.hop_length, window=window)
+        return x_reconstructed
 
     def forward(
             self,
@@ -191,10 +200,19 @@ class WatermarkModel(torch.nn.Module):
                 # freq_bins = n_fft (frame_size) // 2 + 1 = 161
         if len(list_of_watermark) > 0:
             watermark_wav = torch.cat(list_of_watermark, dim=2)[:, 0, :]  # squeeze out the extra 1 dimension
+            # all_watermark is in waveform domain
             all_watermark_wav = self.power * torch.max(torch.abs(x), dim=1)[0].unsqueeze(1) * watermark_wav
-            actual_watermark_wav = self.pad_w_zeros(x, all_watermark_wav)
-            mask = x != 0
-            wm = actual_watermark_wav * mask + 0.0000001
+
+            # [b, freq_bins, time_frames, 2] -> [b, 2, freq_bins, time_frames]
+            all_watermark_stft = self.stft(all_watermark_wav).permute(0, 3, 1, 2)
+            actual_watermark_stft = self.pad_w_zeros_stft(x_spect, all_watermark_stft)
+            mask = x_spect != 0
+
+            print(actual_watermark_stft.size())
+            print(mask.size())
+
+            wm_stft = (actual_watermark_stft * mask + 0.0000001).permute(0, 2, 3, 1)
+            wm = self.istft(wm_stft)
             return x + alpha * wm, alpha * wm
 
         else:
@@ -213,14 +231,14 @@ class WatermarkDetector(torch.nn.Module):
         message. In 0bit watermarking (no secret message), the detector just return 2 values.
     """
 
-    def __init__(self, *args, nbits: int = 0, detector: torch.nn.Module, n_fft: int = 320,
+    def __init__(self, *args, nbits: int = 16, detector: torch.nn.Module, n_fft: int = 320,
                  hop_length: int = np.prod(list(reversed([8, 5, 4]))), **kwargs):
         super().__init__()
 
         self.n_fft = n_fft
         self.hop_length = hop_length
         self.nbits = nbits
-        last_layer = nn.Conv1d(1, 2, 1)
+        last_layer = nn.Conv1d(1, 2+nbits, 1)
         self.detector = nn.Sequential(detector, last_layer)
 
     def detect_watermark(
@@ -291,5 +309,5 @@ class WatermarkDetector(torch.nn.Module):
         x_spect = self.stft(x).permute(0, 3, 1, 2)
         result = self.detector(x_spect)[..., :orig_length]  # b x 2+nbits x length
         result[:, :2, :] = torch.softmax(result[:, :2, :], dim=1)  # Apply softmax
-        # message = self.decode_message(result[:, 2:, :])  # Decode the message
-        return result[:, :2, :], torch.tensor([0])
+        message = self.decode_message(result[:, 2:, :])  # Decode the message
+        return result[:, :2, :], message

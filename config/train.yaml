@@ -1,12 +1,12 @@
 dataset: "librispeech"
 
 path:
-  raw_path: "/storage/seit-guohanqi/librispeech_dataset/LibriSpeech_wav"
-  # raw_path: "D:/Real-time-Voice-Watermark/dataset/LibriSpeech_wav"
+  # raw_path: "/storage/seit-guohanqi/librispeech_dataset/LibriSpeech_wav"
+  raw_path: "D:/Real-time-Voice-Watermark/dataset/LibriSpeech_wav"
   raw_path_test: "experiments/cloned_speechs"
   mel_path: "./melspectogram_images"
-  wm_speech: "./results/wm_speech"
-  # wm_speech: "D:/Real-time-Voice-Watermark/melspectogram_images"
+  # wm_speech: "./results/wm_speech"
+  wm_speech: "D:/Real-time-Voice-Watermark/melspectogram_images"
   ckpt: "results/ckpt/"
   log_path: "results/log/"
 
@@ -15,7 +15,7 @@ future_amt_waveform: 8000
 
 watermark:
   length: 10
-  nbits: 2
+  nbits: 16
 
 optimize:
   lr: 0.00002
@@ -24,7 +24,7 @@ optimize:
   # lambda_m: 0.01
   lambda_no_m: 0.01
   lambda_a: 0.01
-  batch_size: 16
+  batch_size: 3
   step_size: 5000 # large value means do not decay
   gamma: 0.98
   betas: [0.9, 0.98]
@@ -39,9 +39,8 @@ optimize:
   alpha: 10
   train_size: 31000
 
-
 iter:
-  epoch: 300
-  save_circle: 10
+  epoch: 1
+  save_circle: 2
   show_circle: 100
   val_circle: 100
