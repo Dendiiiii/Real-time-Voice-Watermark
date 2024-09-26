@@ -499,13 +499,13 @@ def main(configs):
             running_freq_loss += losses[4]
 
             if steps % interval == 0:
-                soundfile.write(os.path.join("./results/wm_speech", "selected_original_{}.wav".format(steps)),
-                                selected_wav_matrix[0].cpu().squeeze(0).detach().numpy(),
-                                samplerate=16000, format="WAV")
-                soundfile.write(os.path.join("./results/wm_speech", "watermark_{}.wav".format(steps)),
-                                wm[0].cpu().squeeze(0).detach().numpy(), samplerate=16000, format="WAV")
-                soundfile.write(os.path.join("./results/wm_speech", "watermarked_{}.wav".format(steps)),
-                                watermarked_wav[0].cpu().squeeze(0).detach().numpy(), samplerate=16000, format="WAV")
+                # soundfile.write(os.path.join("./results/wm_speech", "selected_original_{}.wav".format(steps)),
+                #                 selected_wav_matrix[0].cpu().squeeze(0).detach().numpy(),
+                #                 samplerate=16000, format="WAV")
+                # soundfile.write(os.path.join("./results/wm_speech", "watermark_{}.wav".format(steps)),
+                #                 wm[0].cpu().squeeze(0).detach().numpy(), samplerate=16000, format="WAV")
+                # soundfile.write(os.path.join("./results/wm_speech", "watermarked_{}.wav".format(steps)),
+                #                 watermarked_wav[0].cpu().squeeze(0).detach().numpy(), samplerate=16000, format="WAV")
 
                 # Compute the spectrogram
                 spectrogram_transform = torchaudio.transforms.Spectrogram(n_fft=320, hop_length=160)
