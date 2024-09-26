@@ -29,10 +29,10 @@ torch.cuda.manual_seed(seed)
 logging_mark = "#" * 20
 logging.basicConfig(filename="mylog_{}.log".format(datetime.datetime.now().strftime("%Y-%m_%d_%H_%M_%S")),
                     level=logging.INFO, format="%(message)s")
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:7" if torch.cuda.is_available() else "cpu")
 
 
-def select_random_chunk(audio_data, percentage=0.8):
+def select_random_chunk(audio_data, percentage=0.99):
     batch_size, total_length = audio_data.shape
 
     # Initialize the label vectors for the entire batch
@@ -119,20 +119,20 @@ def main(configs):
     val_audios_loader = DataLoader(val_audios, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
     dev_audios_loader = DataLoader(dev_audios, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
 
-    # wandb.login(key="9a11e5364efe3bb8fedb3741188ee0d714e942e2")
-    # wandb.init(project="real-time-voice-watermark", name='full_run_20_epoch', config={
-    #     "learning_rate": train_config["optimize"]["lr"],
-    #     "dataset": "LibriSpeech",
-    #     "epochs": train_config["iter"]["epoch"],
-    # })
-    # val_audio_table = wandb.Table(columns=['ep', 'Original Audio', "Watermarked Audio", "Watermark Waveform",
-    #                                        "Original Spectrogram", "Watermarked Audio Spectrogram",
-    #                                        "Watermarked Waveform Spectrogram"])
-    # test_audio_table = wandb.Table(columns=['Original Audio', "Watermarked Audio", "Watermark Waveform",
-    #                                         "Original Spectrogram", "Watermarked_Audio Spectrogram",
-    #                                         "Watermarked Waveform Spectrogram"])
-    # test_loss_summary_table = wandb.Table(columns=['test_l1_loss', "test_bce_loss", "test_perceptual_loss",
-    #                                                "test_freq_loss", "test_total_loss"])
+    wandb.login(key="9a11e5364efe3bb8fedb3741188ee0d714e942e2")
+    wandb.init(project="real-time-voice-watermark", name='full_run_20_epoch', config={
+        "learning_rate": train_config["optimize"]["lr"],
+        "dataset": "LibriSpeech",
+        "epochs": train_config["iter"]["epoch"],
+    })
+    val_audio_table = wandb.Table(columns=['ep', 'Original Audio', "Watermarked Audio", "Watermark Waveform",
+                                           "Original Spectrogram", "Watermarked Audio Spectrogram",
+                                           "Watermarked Waveform Spectrogram"])
+    test_audio_table = wandb.Table(columns=['Original Audio', "Watermarked Audio", "Watermark Waveform",
+                                            "Original Spectrogram", "Watermarked_Audio Spectrogram",
+                                            "Watermarked Waveform Spectrogram"])
+    test_loss_summary_table = wandb.Table(columns=['test_l1_loss', "test_bce_loss", "test_perceptual_loss",
+                                                   "test_freq_loss", "test_ber", "test_total_loss"])
 
     encoder = SimpleEncoder()
     decoder = SimpleDecoder()
@@ -240,7 +240,7 @@ def main(configs):
             total_bits = msg.size(0)  # Total number of bits
             ber = bit_errors / total_bits
 
-            sum_loss = losses[0] + losses[1] + losses[2] + losses[3] + losses[4]
+            sum_loss = losses[0] + losses[1] + losses[2] + losses[3] + losses[4] + losses[5]
 
             sum_loss.backward()
             en_de_op.step()
@@ -429,28 +429,27 @@ def main(configs):
                 plt.savefig(watermark_wm_spectrogram_path)
                 plt.close()
 
-                # val_audio_table.add_data(ep,
-                #                          wandb.Audio(orig_wav_matrix[-1].cpu().numpy(), sample_rate=16000),
-                #                          wandb.Audio(watermarked_wav[-1].cpu().numpy(), sample_rate=16000),
-                #                          wandb.Audio(wm[-1].cpu().numpy(), sample_rate=16000),
-                #                          wandb.Image(original_spectrogram_path),
-                #                          wandb.Image(watermarked_spectrogram_path),
-                #                          wandb.Image(watermark_wm_spectrogram_path))
+                val_audio_table.add_data(ep,
+                                         wandb.Audio(orig_wav_matrix[-1].cpu().numpy(), sample_rate=16000),
+                                         wandb.Audio(watermarked_wav[-1].cpu().numpy(), sample_rate=16000),
+                                         wandb.Audio(wm[-1].cpu().numpy(), sample_rate=16000),
+                                         wandb.Image(original_spectrogram_path),
+                                         wandb.Image(watermarked_spectrogram_path),
+                                         wandb.Image(watermark_wm_spectrogram_path))
 
-            # wandb.log({**train_metrics, **val_metrics})
+            wandb.log({**train_metrics, **val_metrics})
             logging.info("#e" * 60)
             logging.info("eval_epoch:{} - l1_loss:{:.8f} - bce_loss:{:.8f} - perceptual_loss:{:.8f} - "
-                         "freq_loss:{:.8f} - ber:{:.8f} - total_loss:{:.8f}".format(ep,
+                         "freq_loss:{:.8f} - BER:{:.8f} - total_loss:{:.8f}".format(ep,
                                                                                     val_l1_loss,
                                                                                     val_bce_loss,
                                                                                     val_perceptual_loss,
                                                                                     val_freq_loss,
                                                                                     val_ber,
                                                                                     val_total_loss))
-    # wandb.log({'val_audio_table': val_audio_table})
+    wandb.log({'val_audio_table': val_audio_table})
 
     # ------------------- test stage
-
     with torch.no_grad():
         wm_generator.eval()
         wm_detector.eval()
@@ -500,20 +499,20 @@ def main(configs):
             running_freq_loss += losses[4]
 
             if steps % interval == 0:
-                soundfile.write(os.path.join("./results/wm_speech", "selected_original.wav"),
-                                selected_wav_matrix[-1].cpu().squeeze(0).detach().numpy(),
+                soundfile.write(os.path.join("./results/wm_speech", "selected_original_{}.wav".format(steps)),
+                                selected_wav_matrix[0].cpu().squeeze(0).detach().numpy(),
                                 samplerate=16000, format="WAV")
-                soundfile.write(os.path.join("./results/wm_speech", "watermark.wav"),
-                                wm[-1].cpu().squeeze(0).detach().numpy(), samplerate=16000, format="WAV")
-                soundfile.write(os.path.join("./results/wm_speech", "watermarked.wav"),
-                                watermarked_wav[-1].cpu().squeeze(0).detach().numpy(), samplerate=16000, format="WAV")
+                soundfile.write(os.path.join("./results/wm_speech", "watermark_{}.wav".format(steps)),
+                                wm[0].cpu().squeeze(0).detach().numpy(), samplerate=16000, format="WAV")
+                soundfile.write(os.path.join("./results/wm_speech", "watermarked_{}.wav".format(steps)),
+                                watermarked_wav[0].cpu().squeeze(0).detach().numpy(), samplerate=16000, format="WAV")
 
                 # Compute the spectrogram
                 spectrogram_transform = torchaudio.transforms.Spectrogram(n_fft=320, hop_length=160)
 
-                original_spectrogram = spectrogram_transform(orig_wav_matrix[-1].cpu())
-                watermarked_audio_spectrogram = spectrogram_transform(substituted_wav_matrix[-1].cpu())
-                watermark_wav_spectrogram = spectrogram_transform(wm[-1].cpu())
+                original_spectrogram = spectrogram_transform(orig_wav_matrix[0].cpu())
+                watermarked_audio_spectrogram = spectrogram_transform(substituted_wav_matrix[0].cpu())
+                watermark_wav_spectrogram = spectrogram_transform(wm[0].cpu())
 
                 # Convert the spectrogram to a format suitable for matplotlib
                 # Convert the spectrogram to dB scale for better visualization
@@ -581,12 +580,12 @@ def main(configs):
                 plt.savefig(watermark_wm_spectrogram_path)
                 plt.close()
 
-                # test_audio_table.add_data(wandb.Audio(orig_wav_matrix[-1].cpu().numpy(), sample_rate=16000),
-                #                           wandb.Audio(watermarked_wav[-1].cpu().numpy(), sample_rate=16000),
-                #                           wandb.Audio(wm[-1].cpu().numpy(), sample_rate=16000,),
-                #                           wandb.Image(original_spectrogram_path),
-                #                           wandb.Image(watermarked_spectrogram_path),
-                #                           wandb.Image(watermark_wm_spectrogram_path))
+                test_audio_table.add_data(wandb.Audio(orig_wav_matrix[-1].cpu().numpy(), sample_rate=16000),
+                                          wandb.Audio(watermarked_wav[-1].cpu().numpy(), sample_rate=16000),
+                                          wandb.Audio(wm[-1].cpu().numpy(), sample_rate=16000,),
+                                          wandb.Image(original_spectrogram_path),
+                                          wandb.Image(watermarked_spectrogram_path),
+                                          wandb.Image(watermark_wm_spectrogram_path))
 
         test_l1_loss = running_l1_loss / len(dev_audios_loader)
         test_bce_loss = running_bce / len(dev_audios_loader)
@@ -595,10 +594,10 @@ def main(configs):
         test_ber = running_ber / len(dev_audios_loader)
         test_total_loss = test_l1_loss + test_bce_loss + test_perceptual_loss + test_freq_loss
 
-        # test_loss_summary_table.add_data(test_l1_loss, test_bce_loss, test_perceptual_loss, test_freq_loss, test_ber
-        #                                  test_total_loss)
-        #
-        # wandb.log({"test_audio_table": test_audio_table, "test_loss_summary_table": test_loss_summary_table})
+        test_loss_summary_table.add_data(test_l1_loss, test_bce_loss, test_perceptual_loss, test_freq_loss,
+                                         test_ber, test_total_loss)
+
+        wandb.log({"test_audio_table": test_audio_table, "test_loss_summary_table": test_loss_summary_table})
         logging.info("#test#" * 20)
         logging.info("test l1_loss:{:.8f} - BCE_loss:{:.8f} - perceptual_loss:{:.8f} - "
                      "freq_loss:{:.8f} - BER:{:.8f} - total_loss:{:.8f}".format(test_l1_loss,
@@ -607,7 +606,7 @@ def main(configs):
                                                                                 test_freq_loss,
                                                                                 test_ber,
                                                                                 test_total_loss))
-    # wandb.finish()
+    wandb.finish()
 
 
 if __name__ == "__main__":

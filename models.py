@@ -64,7 +64,8 @@ class WatermarkModel(torch.nn.Module):
             model_config,
             n_fft: int = 320,  # 512,
             hop_length: int = np.prod(list(reversed([8, 5, 4]))),
-            future_ts: float = 50,
+            future_ts: int = 50,
+            future_ts_waveform: int = 8000,
             future: bool = True,
             wandb: bool = False,
             msg_processor: Optional[torch.nn.Module] = None
@@ -77,6 +78,7 @@ class WatermarkModel(torch.nn.Module):
 
         self.CEloss = torch.nn.CrossEntropyLoss()
         self.future_ts = future_ts
+        self.future_ts_waveform = future_ts_waveform
         self.future = future
         self.wandb = wandb
 
@@ -110,7 +112,6 @@ class WatermarkModel(torch.nn.Module):
                 currently supported by the main model)
             message: An optional binary message, size: batch x k
         """
-        length = x.size(-1)
         if sample_rate is None:
             logger.warning("No sample rate input, setting it to be 16khz")
             sample_rate = 16_000
@@ -138,26 +139,44 @@ class WatermarkModel(torch.nn.Module):
             watermark = julius.resample_frac(
                 watermark, old_sr=16000, new_sr=sample_rate
             )
+        return watermark
 
-        return watermark[..., :length]
+    # def pad_w_zeros_stft(
+    #         self,
+    #         x: torch.Tensor,
+    #         watermark_stft: torch.Tensor
+    # ) -> torch.Tensor:
+    #     if not self.future:
+    #         zeros = torch.zeros(x.size(0), x.size(1), x.size(2),
+    #                             x.size(3) - watermark_stft.size(3) - 204).to(x.device)
+    #         actual_watermark_stft = torch.cat([torch.zeros(x.size(0), 2, 161, 204).to(x.device), watermark_stft,
+    #                                           zeros], dim=3) + 1e-9
+    #     else:
+    #         zeros = torch.zeros(x.size(0), x.size(1), x.size(2),
+    #                             x.size(3) - watermark_stft.size(3) - (204 + self.future_ts)).to(x.device)
+    #         actual_watermark_stft = torch.cat(
+    #             [torch.zeros(x.size(0), 2, 161, (204 + self.future_ts)).to(x.device), watermark_stft, zeros],
+    #             dim=3) + 1e-9
+    #     return actual_watermark_stft
 
-    def pad_w_zeros_stft(
+    def pad_w_zeros_wv(
             self,
             x: torch.Tensor,
-            watermark_stft: torch.Tensor
+            watermark_wm: torch.Tensor
     ) -> torch.Tensor:
         if not self.future:
-            zeros = torch.zeros(x.size(0), x.size(1), x.size(2),
-                                x.size(3) - watermark_stft.size(3) - 204).to(x.device)
-            actual_watermark_stft = torch.cat([torch.zeros(x.size(0), 2, 161, 204).to(x.device), watermark_stft,
-                                              zeros], dim=3) + 1e-9
+            # 2.05s * 16000 = 32800 frames
+            zeros = torch.zeros(x.size(0), x.size(2) - watermark_wm.size(2) - 32800).to(x.device)
+            actual_watermark_wm = torch.cat([torch.zeros(x.size(0), 32800).to(x.device), watermark_wm, zeros],
+                                            dim=1) + 1e-9
         else:
-            zeros = torch.zeros(x.size(0), x.size(1), x.size(2),
-                                x.size(3) - watermark_stft.size(1) - (204 + self.future_ts)).to(x.device)
-            actual_watermark_stft = torch.cat(
-                [torch.zeros(x.size(0), 2, 161, (204 + self.future_ts)).to(x.device), watermark_stft, zeros],
-                dim=3) + 1e-9
-        return actual_watermark_stft
+            zeros = (torch.zeros(x.size(0), x.size(1) - watermark_wm.size(1) - (32800 + self.future_ts_waveform)).
+                     to(x.device))
+            actual_watermark_wm = torch.cat(
+                [torch.zeros(x.size(0), (32800 + self.future_ts_waveform)).to(x.device), watermark_wm, zeros],
+                dim=1) + 1e-9
+
+        return actual_watermark_wm
 
     def stft(self, x):
         window = torch.hann_window(self.n_fft).to(x.device)
@@ -165,13 +184,14 @@ class WatermarkModel(torch.nn.Module):
         tmp = torch.view_as_real(tmp)
         return tmp
 
-    def istft(self, x):
-        # Convert from (real, imag) to complex
-        x_complex = torch.view_as_complex(x)
-        window = torch.hann_window(self.n_fft).to(x.device)
-        # Inverse STFT to reconstruct the time-domain signal
-        x_reconstructed = torch.istft(x_complex, n_fft=self.n_fft, hop_length=self.hop_length, window=window)
-        return x_reconstructed
+    # def istft(self, x):
+    #     # Convert from (real, imag) to complex
+    #     x_contiguous = x.contiguous()
+    #     x_complex = torch.view_as_complex(x_contiguous)
+    #     window = torch.hann_window(self.n_fft).to(x.device)
+    #     # Inverse STFT to reconstruct the time-domain signal
+    #     x_reconstructed = torch.istft(x_complex, n_fft=self.n_fft, hop_length=self.hop_length, window=window)
+    #     return x_reconstructed
 
     def forward(
             self,
@@ -187,14 +207,13 @@ class WatermarkModel(torch.nn.Module):
 
         x_spect = self.stft(x).permute(0, 3, 1, 2)  # [b, freq_bins, time_frames, 2] -> [b, 2, freq_bins, time_frames]
         list_of_watermark = []
-
         if int((x_spect.size(-1) - (204 + self.future_ts)) / 51) > 0:
             for i in range(int((x_spect.size(-1) - (204 + self.future_ts)) / 51)):
                 out = self.get_watermark(x_spect[:, :, :, i * 51:204 + i * 51], sample_rate=sample_rate,
                                          message=message)
                 list_of_watermark.append(out)
                 # 2.05s has 2.05*16000 = 32800 samples
-                # n_fft (frame_size) = 320dis
+                # n_fft (frame_size) = 320
                 # hop_length = 160
                 # frames = (32800-320)/160 + 1 = 204 frames
                 # freq_bins = n_fft (frame_size) // 2 + 1 = 161
@@ -202,17 +221,18 @@ class WatermarkModel(torch.nn.Module):
             watermark_wav = torch.cat(list_of_watermark, dim=2)[:, 0, :]  # squeeze out the extra 1 dimension
             # all_watermark is in waveform domain
             all_watermark_wav = self.power * torch.max(torch.abs(x), dim=1)[0].unsqueeze(1) * watermark_wav
+            # # [b, freq_bins, time_frames, 2] -> [b, 2, freq_bins, time_frames]
+            # all_watermark_stft = self.stft(all_watermark_wav).permute(0, 3, 1, 2)
+            # actual_watermark_stft = self.pad_w_zeros_stft(x_spect, all_watermark_stft)
+            # mask = x_spect != 0
+            #
+            # wm_stft = (actual_watermark_stft * mask + 0.0000001).permute(0, 2, 3, 1)
+            # wm = self.istft(wm_stft)
+            actual_watermark_wav = self.pad_w_zeros_wv(x, all_watermark_wav)
+            mask = x != 0
 
-            # [b, freq_bins, time_frames, 2] -> [b, 2, freq_bins, time_frames]
-            all_watermark_stft = self.stft(all_watermark_wav).permute(0, 3, 1, 2)
-            actual_watermark_stft = self.pad_w_zeros_stft(x_spect, all_watermark_stft)
-            mask = x_spect != 0
+            wm = (actual_watermark_wav * mask + 0.0000001)
 
-            print(actual_watermark_stft.size())
-            print(mask.size())
-
-            wm_stft = (actual_watermark_stft * mask + 0.0000001).permute(0, 2, 3, 1)
-            wm = self.istft(wm_stft)
             return x + alpha * wm, alpha * wm
 
         else:
