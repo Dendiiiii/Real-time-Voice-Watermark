@@ -76,22 +76,26 @@ class wav_dataset(Dataset):
         for idx in range(len(self.wavs)):
             audio_name = self.wavs[idx]
             wav, sr = torchaudio.load(os.path.join(self.dataset_path, audio_name))
-            if wav.shape[1] > self.max_len:
-                cuted_len = random.randint(5*sr, self.max_len)
-                wav = wav[:, :cuted_len]
-            if sr != self.sample_rate:
-                wav = self.resample(wav[0, :].view(1, -1))
-            sample = {
-                "matrix": wav,
-                "sample_rate": sr,
-                "patch_num": 0,
-                "pad_num": 0,
-                "name": audio_name
-            }
-            self.sample_list.append(sample)
+            # 2.05s * 16000 = 32800 frames
+            if wav.shape[1] > 2.05*sr:
+                if wav.shape[1] > self.max_len:
+                    cuted_len = random.randint(5*sr, self.max_len)
+                    wav = wav[:, :cuted_len]
+                if sr != self.sample_rate:
+                    wav = self.resample(wav[0, :].view(1, -1))
+                sample = {
+                    "matrix": wav,
+                    "sample_rate": sr,
+                    "patch_num": 0,
+                    "pad_num": 0,
+                    "name": audio_name
+                }
+                self.sample_list.append(sample)
+            else:
+                print("Audio length less than 2.05s")
 
     def __len__(self):
-        return len(self.wavs)
+        return len(self.sample_list)
 
     def __getitem__(self, idx):
         return self.sample_list[idx]

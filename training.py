@@ -60,32 +60,6 @@ def select_random_chunk(audio_data, percentage=0.99):
     return torch.from_numpy(label_vector).float().to(audio_data.device), torch.stack(selected_audio_batch, dim=0)
 
 
-def save_spectrogram_as_img(audio, datadir, sample_rate=16000, plt_type='mel'):
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.png'
-    out_path = os.path.join(datadir, timestamp)
-    if plt_type == 'spec':
-        spec = np.abs(librosa.stft(audio))
-        spec_db = librosa.amplitude_to_db(spec, ref=np.max)
-    else:
-        mel_spec = librosa.feature.melspectrogram(audio, sr=sample_rate)
-        mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
-
-    fig = plt.Figure()
-    ax = fig.add_subplot()
-    ax.set_axis_off()
-
-    librosa.display.specshow(
-        spec_db if plt_type == 'spec' else mel_spec_db,
-        y_axis='log' if plt_type == 'spec' else 'mel',
-        x_axis='time', ax=ax)
-
-    if not os.path.exists(out_path):
-        os.makedirs(out_path)
-
-    fig.savefig(out_path)
-    return out_path
-
-
 def substitute_watermarked_audio(wav_matrix, watermarked_wav, label_vector):
     # Ensure wav_matrix is a torch tensor and on the same device as the watermarked_wav
     wav_matrix = wav_matrix.to(watermarked_wav.device)
@@ -237,7 +211,7 @@ def main(configs):
             bit_errors = torch.sum(predicted_bits != msg).item()
 
             # Calculate BER
-            total_bits = msg.size(0)  # Total number of bits
+            total_bits = msg.size(0) * msg.size(1)  # Total number of bits
             ber = bit_errors / total_bits
 
             sum_loss = losses[0] + losses[1] + losses[2] + losses[3] + losses[4] + losses[5]
@@ -331,7 +305,7 @@ def main(configs):
                 bit_errors = torch.sum(predicted_bits != msg).item()
 
                 # Calculate BER
-                total_bits = msg.size(0)  # Total number of bits
+                total_bits = msg.size(0)*msg.size(1)  # Total number of bits
                 ber = bit_errors / total_bits
 
                 running_l1_loss += losses[0]
@@ -488,7 +462,7 @@ def main(configs):
             bit_errors = torch.sum(predicted_bits != msg).item()
 
             # Calculate BER
-            total_bits = msg.size(0)  # Total number of bits
+            total_bits = msg.size(0)*msg.size(1)  # Total number of bits
             ber = bit_errors / total_bits
 
             running_l1_loss += losses[0]
