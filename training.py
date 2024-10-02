@@ -334,9 +334,9 @@ def main(configs):
                 # Compute the spectrogram
                 spectrogram_transform = torchaudio.transforms.Spectrogram(n_fft=320, hop_length=160)
 
-                original_spectrogram = spectrogram_transform(orig_wav_matrix[-1].cpu())
-                watermarked_audio_spectrogram = spectrogram_transform(substituted_wav_matrix[-1].cpu())
-                watermark_wav_spectrogram = spectrogram_transform(wm[-1].cpu())
+                original_spectrogram = spectrogram_transform(orig_wav_matrix[0].cpu())
+                watermarked_audio_spectrogram = spectrogram_transform(substituted_wav_matrix[0].cpu())
+                watermark_wav_spectrogram = spectrogram_transform(wm[0].cpu())
 
                 # Convert the spectrogram to a format suitable for matplotlib
                 # Convert the spectrogram to dB scale for better visualization
