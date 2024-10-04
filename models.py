@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Tuple, Type, TypeVar, Union, cast
 from urllib.parse import urlparse  # noqa: F401
 
 import julius
+import numpy as np
 
 from libs.modules.seanet import *
 
