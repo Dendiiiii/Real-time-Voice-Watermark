@@ -1,11 +1,8 @@
-import logging
 import os
-import random
 
 import soundfile
 import yaml
 from rich.progress import track
-from torch.optim import AdamW
 from torch.utils.data import DataLoader
 
 from dataset.data import collate_fn
