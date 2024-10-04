@@ -82,7 +82,7 @@ class Loss(nn.Module):
 
     def en_de_loss(self, x, w_x, wm, prob, labels, decoded_msg, message):
         # 从小数点到db level做mse, regularizer
-        bce_loss = self.bce_loss(prob[:, 0, :], labels)
+        bce_loss = self.bce_loss(prob[:, 0, :], labels.float())
         decode_bce_loss = self.bce_loss(decoded_msg, message)
         l1_loss = self.l1_loss(w_x, x)
         l2_loss = self.l2_loss(w_x, x)

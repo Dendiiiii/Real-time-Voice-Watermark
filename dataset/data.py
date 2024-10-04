@@ -20,8 +20,6 @@ def collate_fn(batch):
     batched_sample = {
         "matrix": torch.cat([sample['matrix'] for sample in batch], dim=0),
         "sample_rate": torch.tensor([sample['sample_rate'] for sample in batch]),
-        "patch_num": torch.tensor([sample['patch_num'] for sample in batch]),
-        "pad_num": torch.tensor([sample['pad_num'] for sample in batch]),
         "name": [sample['name'] for sample in batch]
     }
     return batched_sample
@@ -60,8 +58,6 @@ class wav_dataset(Dataset):
                 sample = {
                     "matrix": wav,
                     "sample_rate": sr,
-                    "patch_num": 0,
-                    "pad_num": 0,
                     "name": audio_name
                 }
                 self.sample_list.append(sample)

@@ -32,7 +32,7 @@ logging.basicConfig(filename="mylog_{}.log".format(datetime.datetime.now().strft
 device = torch.device("cuda:7" if torch.cuda.is_available() else "cpu")
 
 
-def select_random_chunk(audio_data, percentage=0.99):
+def select_random_chunk(audio_data, percentage=1.0):
     batch_size, total_length = audio_data.shape
 
     # Initialize the label vectors for the entire batch
@@ -50,14 +50,21 @@ def select_random_chunk(audio_data, percentage=0.99):
         start_point = np.random.randint(0, total_length - chunk_length + 1)
         end_point = start_point + chunk_length
 
-        # Create the label vector for this sequence
+        # Create the label vector for selected sequence
         label_vector[i, start_point:end_point] = 1
 
         # Select the audio using the label vector
         selected_audio = audio_data[i][label_vector[i] == 1]
         selected_audio_batch.append(selected_audio)
 
-    return torch.from_numpy(label_vector).float().to(audio_data.device), torch.stack(selected_audio_batch, dim=0)
+        # mask the first 2.05s sample to be zero (unwatermarked)
+        label_vector[i, :32800] = 0
+
+    # create the mask for samples that have no sound
+    mask = audio_data != 0
+    final_label = torch.from_numpy(label_vector).to(audio_data.device)*mask
+
+    return final_label, torch.stack(selected_audio_batch, dim=0)
 
 
 def substitute_watermarked_audio(wav_matrix, watermarked_wav, label_vector):
@@ -157,8 +164,6 @@ def main(configs):
     lambda_e = train_config["optimize"]["lambda_e"]
     lambda_m = train_config["optimize"]["lambda_m"]
     global_step = 0
-    cnt = 0
-    interval = math.ceil(len(train_audios_loader) / 30)
     for ep in range(1, epoch_num + 1):
         wm_generator.train()
         wm_detector.train()
@@ -198,9 +203,10 @@ def main(configs):
 
             # Substitute the selected part of wav_matrix with watermarked_wav
             # substituted_wav_matrix has the same shape as wav_matrix
-            substituted_wav_matrix = substitute_watermarked_audio(wav_matrix, watermarked_wav, label_vec)
+            # substituted_wav_matrix = substitute_watermarked_audio(wav_matrix, watermarked_wav, label_vec)
 
-            prob, decoded_msg = wm_detector(substituted_wav_matrix)
+            # prob, decoded_msg = wm_detector(substituted_wav_matrix)
+            prob, decoded_msg = wm_detector(watermarked_wav)
 
             losses = loss.en_de_loss(selected_wav_matrix, watermarked_wav, wm, prob, label_vec, decoded_msg, msg)
 
@@ -293,9 +299,10 @@ def main(configs):
                 watermarked_wav, wm = wm_generator(selected_wav_matrix, message=msg)
 
                 # Substitute the selected part of wav_matrix with watermarked_wav
-                substituted_wav_matrix = substitute_watermarked_audio(wav_matrix, watermarked_wav, label_vec)
+                # substituted_wav_matrix = substitute_watermarked_audio(wav_matrix, watermarked_wav, label_vec)
 
-                prob, decoded_msg = wm_detector(substituted_wav_matrix)
+                # prob, decoded_msg = wm_detector(substituted_wav_matrix)
+                prob, decoded_msg = wm_detector(watermarked_wav)
                 losses = loss.en_de_loss(selected_wav_matrix, watermarked_wav, wm, prob, label_vec, decoded_msg, msg)
 
                 # Convert probabilities to binary values (0 or 1) using a threshold of 0.5
@@ -330,12 +337,12 @@ def main(configs):
                            "val/val_BER": val_ber,
                            "val/val_total_loss": val_total_loss}
 
-            if ep % interval == 0:
+            if ep % save_circle == 0:
                 # Compute the spectrogram
                 spectrogram_transform = torchaudio.transforms.Spectrogram(n_fft=320, hop_length=160)
 
                 original_spectrogram = spectrogram_transform(orig_wav_matrix[0].cpu())
-                watermarked_audio_spectrogram = spectrogram_transform(substituted_wav_matrix[0].cpu())
+                watermarked_audio_spectrogram = spectrogram_transform(watermarked_wav[0].cpu())
                 watermark_wav_spectrogram = spectrogram_transform(wm[0].cpu())
 
                 # Convert the spectrogram to a format suitable for matplotlib
@@ -434,11 +441,10 @@ def main(configs):
         running_ber = 0.0
         running_freq_loss = 0.0
         steps = 0
-        interval = math.ceil(len(dev_audios_loader) / 5)
+        interval = math.ceil(len(dev_audios_loader.dataset) / 5)
         for sample in track(dev_audios_loader):
             steps += 1
             orig_wav_matrix = sample["matrix"].to(device)
-
             if True:
                 wav_matrix = orig_wav_matrix
 
@@ -450,9 +456,10 @@ def main(configs):
             watermarked_wav, wm = wm_generator(selected_wav_matrix, message=msg)
 
             # Substitute the selected part of wav_matrix with watermarked_wav
-            substituted_wav_matrix = substitute_watermarked_audio(wav_matrix, watermarked_wav, label_vec)
-
-            prob, decoded_msg = wm_detector(substituted_wav_matrix)
+            # substituted_wav_matrix = substitute_watermarked_audio(wav_matrix, watermarked_wav, label_vec)
+            #
+            # prob, decoded_msg = wm_detector(substituted_wav_matrix)
+            prob, decoded_msg = wm_detector(watermarked_wav)
             losses = loss.en_de_loss(selected_wav_matrix, watermarked_wav, wm, prob, label_vec, decoded_msg, msg)
 
             # Convert probabilities to binary values (0 or 1) using a threshold of 0.5
@@ -485,7 +492,7 @@ def main(configs):
                 spectrogram_transform = torchaudio.transforms.Spectrogram(n_fft=320, hop_length=160)
 
                 original_spectrogram = spectrogram_transform(orig_wav_matrix[0].cpu())
-                watermarked_audio_spectrogram = spectrogram_transform(substituted_wav_matrix[0].cpu())
+                watermarked_audio_spectrogram = spectrogram_transform(watermarked_wav[0].cpu())
                 watermark_wav_spectrogram = spectrogram_transform(wm[0].cpu())
 
                 # Convert the spectrogram to a format suitable for matplotlib

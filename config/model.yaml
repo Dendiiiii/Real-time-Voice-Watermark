@@ -1,4 +1,4 @@
-power: 0.01
+power: 0.008
 
 test:
   model_path: "./results/ckpt/"
