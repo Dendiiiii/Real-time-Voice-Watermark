@@ -1,15 +1,16 @@
 import numpy as np
 import torch
 import torch.nn as nn
-import torchaudio
-import pyloudnorm as pyln
-import torchaudio.functional as F
 
 
 # Approximated Fletcher-Munson curve
 def fletcher_munson_weights(freqs):
     freqs = np.maximum(freqs, 1e-6)
-    return 3.64 * (freqs/1000)**-0.8 - 6.5 * np.exp(-0.6 * (freqs/1000 - 3.3)**2) + (10**-3) * (freqs/1000)**4
+    return (
+        3.64 * (freqs / 1000) ** -0.8
+        - 6.5 * np.exp(-0.6 * (freqs / 1000 - 3.3) ** 2)
+        + (10**-3) * (freqs / 1000) ** 4
+    )
 
 
 def perceptual_loss(watermark, sample_rate=16000):
@@ -17,10 +18,14 @@ def perceptual_loss(watermark, sample_rate=16000):
     watermark_fft = torch.fft.fft(watermark)
 
     # Generate frequencies corresponding to FFT components
-    freqs = torch.fft.fftfreq(watermark_fft.size(-1), d=1/sample_rate).to(watermark.device)
+    freqs = torch.fft.fftfreq(watermark_fft.size(-1), d=1 / sample_rate).to(
+        watermark.device
+    )
 
     # Calculate weights based on human ear sensitivity
-    weights = torch.tensor(fletcher_munson_weights(freqs.cpu().numpy())).to(watermark.device)
+    weights = torch.tensor(fletcher_munson_weights(freqs.cpu().numpy())).to(
+        watermark.device
+    )
 
     # Ensure weights are non-negative (if there are any negative weights, set them to a small positive value)
     weights = torch.clamp(weights, min=1e-6)
@@ -66,7 +71,9 @@ def frequency_domain_loss(x, w_x):
     stft_watermarked_x = torch.stft(w_x, n_fft=320, return_complex=True, window=window)
 
     # Calculate the difference in the frequency domain
-    frequency_loss = torch.nn.functional.mse_loss(torch.abs(stft_original), torch.abs(stft_watermarked_x))
+    frequency_loss = torch.nn.functional.mse_loss(
+        torch.abs(stft_original), torch.abs(stft_watermarked_x)
+    )
 
     return frequency_loss
 
@@ -93,4 +100,11 @@ class Loss(nn.Module):
         smoothness_loss = 0  # tvl_loss + grad_penalty_loss
         freq_loss = frequency_domain_loss(x, w_x)
 
-        return hybrid_loss_value*0, bce_loss, percep_loss*0.035, smoothness_loss, freq_loss*0, decode_bce_loss
+        return (
+            hybrid_loss_value * 0,
+            bce_loss,
+            percep_loss * 0.035,
+            smoothness_loss,
+            freq_loss * 0,
+            decode_bce_loss,
+        )

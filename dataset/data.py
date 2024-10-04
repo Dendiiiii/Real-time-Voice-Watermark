@@ -1,32 +1,35 @@
-import torch
-from torch.utils.data import Dataset
-import torchaudio
-import random
 import os
+import random
+
+import torch
+import torchaudio
+from torch.utils.data import Dataset
 
 
 def collate_fn(batch):
     # Find the maximum length in the batch for padding
-    max_len = max([sample['matrix'].size(1) for sample in batch])
+    max_len = max([sample["matrix"].size(1) for sample in batch])
 
     # Pad each sample and update pad_num accordingly
     for sample in batch:
-        original_len = sample['matrix'].size(1)
+        original_len = sample["matrix"].size(1)
         pad_size = max_len - original_len
-        sample['matrix'] = torch.nn.functional.pad(sample['matrix'], (0, pad_size))  # Pad with zeros
-        sample['pad_num'] = pad_size  # Update the padding number
+        sample["matrix"] = torch.nn.functional.pad(
+            sample["matrix"], (0, pad_size)
+        )  # Pad with zeros
+        sample["pad_num"] = pad_size  # Update the padding number
 
     # Combine all samples into a single batch dictionary
     batched_sample = {
-        "matrix": torch.cat([sample['matrix'] for sample in batch], dim=0),
-        "sample_rate": torch.tensor([sample['sample_rate'] for sample in batch]),
-        "name": [sample['name'] for sample in batch]
+        "matrix": torch.cat([sample["matrix"] for sample in batch], dim=0),
+        "sample_rate": torch.tensor([sample["sample_rate"] for sample in batch]),
+        "name": [sample["name"] for sample in batch],
     }
     return batched_sample
 
 
 class wav_dataset(Dataset):
-    def __init__(self, process_config, train_config, flag='train'):
+    def __init__(self, process_config, train_config, flag="train"):
         self.dataset_name = train_config["dataset"]
         raw_dataset_path = train_config["path"]["raw_path"]
         self.dataset_path = os.path.join(raw_dataset_path, flag)
@@ -42,7 +45,7 @@ class wav_dataset(Dataset):
         # 2.05s * 16000 = 32800 frames
         # 0.5s * 16000 = 8000 frames
         # Input audio length needs to be greater than 2.55s (32800+8000 frames)
-        min_length = 32800+8000
+        min_length = 32800 + 8000
 
         for idx in range(len(self.wavs)):
             audio_name = self.wavs[idx]
@@ -51,15 +54,11 @@ class wav_dataset(Dataset):
 
             if wav.shape[1] > min_length:
                 if wav.shape[1] > self.max_len:
-                    cuted_len = random.randint(5*sr, self.max_len)
+                    cuted_len = random.randint(5 * sr, self.max_len)
                     wav = wav[:, :cuted_len]
                 if sr != self.sample_rate:
                     wav = self.resample(wav[0, :].view(1, -1))
-                sample = {
-                    "matrix": wav,
-                    "sample_rate": sr,
-                    "name": audio_name
-                }
+                sample = {"matrix": wav, "sample_rate": sr, "name": audio_name}
                 self.sample_list.append(sample)
             else:
                 print("The length of {} is shorter than 2.55s".format(audio_name))

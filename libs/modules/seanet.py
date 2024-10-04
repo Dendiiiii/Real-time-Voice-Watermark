@@ -1,27 +1,37 @@
-import typing as tp
-import math
-import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from libs.modules.conv import *
 
 
 class DownConvBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride,
-                 dilation=1,
-                 norm_fn='bn',
-                 act='prelu'):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride,
+        dilation=1,
+        norm_fn="bn",
+        act="prelu",
+    ):
         super(DownConvBlock, self).__init__()
         pad = (kernel_size - 1) // 2 * dilation
         block = []
         block.append(nn.ReflectionPad2d(pad))
-        block.append(nn.Conv2d(in_channels, out_channels, kernel_size, stride, 0, dilation, bias=norm_fn is None))
+        block.append(
+            nn.Conv2d(
+                in_channels,
+                out_channels,
+                kernel_size,
+                stride,
+                0,
+                dilation,
+                bias=norm_fn is None,
+            )
+        )
         if norm_fn == "bn":
             block.append(nn.BatchNorm2d(out_channels))
-        elif act == 'prelu':
+        elif act == "prelu":
             block.append(nn.PReLU())
-        elif act == 'lrelu':
+        elif act == "lrelu":
             block.append(nn.LeakyReLU())
 
         self.block = nn.Sequential(*block)
@@ -40,14 +50,21 @@ class SimpleEncoder(nn.Module):
 
         model = [
             nn.Sequential(DownConvBlock(2, self.ch1, 5, (2, 2))),
-            nn.Sequential(DownConvBlock(self.ch1, self.ch2, 5, (2, 2)),
-                          DownConvBlock(self.ch2, self.ch2, 5, (2, 2))),
-            nn.Sequential(DownConvBlock(self.ch2, self.ch3, 5, (2, 2)),
-                          DownConvBlock(self.ch3, self.ch2, 3, (2, 2)),
-                          DownConvBlock(self.ch2, self.ch2, 3, (2, 2)),
-                          DownConvBlock(self.ch2, self.ch3, 3, (2, 2)),),
-            nn.Sequential(nn.Conv2d(self.ch3, self.dimension, (2, 2), (1, 1), 0, (1, 1)),
-                          nn.LeakyReLU())]
+            nn.Sequential(
+                DownConvBlock(self.ch1, self.ch2, 5, (2, 2)),
+                DownConvBlock(self.ch2, self.ch2, 5, (2, 2)),
+            ),
+            nn.Sequential(
+                DownConvBlock(self.ch2, self.ch3, 5, (2, 2)),
+                DownConvBlock(self.ch3, self.ch2, 3, (2, 2)),
+                DownConvBlock(self.ch2, self.ch2, 3, (2, 2)),
+                DownConvBlock(self.ch2, self.ch3, 3, (2, 2)),
+            ),
+            nn.Sequential(
+                nn.Conv2d(self.ch3, self.dimension, (2, 2), (1, 1), 0, (1, 1)),
+                nn.LeakyReLU(),
+            ),
+        ]
 
         self.model = nn.Sequential(*model)
 
@@ -63,7 +80,9 @@ class SimpleDecoder(nn.Module):
         self.up2 = nn.Sequential(nn.ConvTranspose1d(64, 32, 5, 2), nn.LeakyReLU())
         self.up3 = nn.Sequential(nn.ConvTranspose1d(32, 16, 5, 2), nn.LeakyReLU())
         self.up4 = nn.Sequential(nn.ConvTranspose1d(16, 1, 5, 2), nn.Tanh())
-        self.linear = nn.Sequential(nn.Linear(4117, 8000), nn.Tanh())  # 8000 samples = 0.5s
+        self.linear = nn.Sequential(
+            nn.Linear(4117, 8000), nn.Tanh()
+        )  # 8000 samples = 0.5s
 
     def forward(self, x):
         up1 = self.up1(x)
@@ -76,10 +95,21 @@ class SimpleDecoder(nn.Module):
 
 
 class UpConvBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride, padding=0, dilation=1):
+    def __init__(
+        self, in_channels, out_channels, kernel_size, stride, padding=0, dilation=1
+    ):
         super(UpConvBlock, self).__init__()
-        self.up = nn.Sequential(nn.ConvTranspose2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride,
-                                                   padding=padding, dilation=dilation), nn.LeakyReLU())
+        self.up = nn.Sequential(
+            nn.ConvTranspose2d(
+                in_channels,
+                out_channels,
+                kernel_size=kernel_size,
+                stride=stride,
+                padding=padding,
+                dilation=dilation,
+            ),
+            nn.LeakyReLU(),
+        )
 
         # self.double_conv = nn.Sequential(
         #     nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=False),
@@ -107,12 +137,15 @@ class SimpleDetector(SimpleEncoder):
             UpConvBlock(self.ch3, self.ch2, 2, 2, (0, 0)),
             UpConvBlock(self.ch2, self.ch2, 4, 4, (0, 0)),
             UpConvBlock(self.ch2, self.ch2, 4, 4, (0, 0)),
-            UpConvBlock(self.ch2, 2, 2, 1, (0, 0)))
+            UpConvBlock(self.ch2, 2, 2, 1, (0, 0)),
+        )
 
     def istft(self, x):
         window = torch.hann_window(self.n_fft).to(x.device)
         x = torch.view_as_complex(x.permute(0, 2, 3, 1).contiguous())
-        tmp = torch.istft(x, n_fft=self.n_fft, hop_length=self.hop_length, window=window)
+        tmp = torch.istft(
+            x, n_fft=self.n_fft, hop_length=self.hop_length, window=window
+        )
         return tmp
 
     def forward(self, x):
@@ -120,8 +153,3 @@ class SimpleDetector(SimpleEncoder):
         x = self.detector(x)
         x = self.istft(x).unsqueeze(1)
         return x
-
-
-
-
-
