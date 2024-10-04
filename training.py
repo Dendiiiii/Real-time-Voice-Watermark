@@ -584,11 +584,8 @@ def main(configs):
         running_perceptual_loss = 0.0
         # running_smoothness_loss = 0.0
         running_ber = 0.0
-        running_freq_loss = 0.0
-        steps = 0
         interval = math.ceil(len(dev_audios_loader.dataset) / 5)
-        for sample in track(dev_audios_loader):
-            steps += 1
+        for step, sample in enumerate(track(dev_audios_loader)):
             orig_wav_matrix = sample["matrix"].to(device)
             if True:
                 wav_matrix = orig_wav_matrix
@@ -635,8 +632,12 @@ def main(configs):
             # running_smoothness_loss += losses[3]
             running_ber += ber
             running_freq_loss += losses[4]
-
-            if steps % interval == 0:
+            print(
+                "interval: {} - steps: {}, - steps % interval:{}".format(
+                    interval, step, step % interval
+                )
+            )
+            if step % interval == 0:
                 # soundfile.write(os.path.join("./results/wm_speech", "selected_original_{}.wav".format(steps)),
                 #                 selected_wav_matrix[0].cpu().squeeze(0).detach().numpy(),
                 #                 samplerate=16000, format="WAV")
