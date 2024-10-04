@@ -817,8 +817,3 @@ if __name__ == "__main__":
     configs = (process_config, model_config, train_config)
     main(configs)
     torch.cuda.empty_cache()
-    # try:
-    #     main(configs)
-    # except Exception as e:
-    #     error_type = type(e).__name__  # 获取异常类型的名称
-    #     logging.error(f"An error of type {error_type} occurred: {e}")
