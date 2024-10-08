@@ -48,8 +48,9 @@ def select_random_chunk(audio_data, percentage=1.0):
         # Determine the length of the chunk to be selected
         chunk_length = int(total_length * percentage)
 
-        # Randomly choose the start of the chunk
-        start_point = torch.randint(0, total_length - chunk_length + 1, device=audio_data.device)
+        # Correct randint usage for selecting a start_point
+        start_point = torch.randint(0, total_length - chunk_length + 1, (1,), device=audio_data.device).item()
+
         end_point = start_point + chunk_length
 
         # Create the label vector for selected sequence
