@@ -154,6 +154,7 @@ def main(configs):
             "test_perceptual_loss",
             "test_freq_loss",
             "test_ber",
+            "test_loudness_loss",
             "test_total_loss",
         ]
     )
@@ -221,12 +222,13 @@ def main(configs):
         wm_detector.train()
         step = 0
         running_l1_loss = 0.0
-        running_binary_cross_entropy_loss = 0.0
+        running_bce_loss = 0.0
         running_perceptual_loss = 0.0
         # running_smoothness_loss = 0.0
         running_freq_loss = 0.0
         running_decode_bce = 0.0
         running_ber = 0.0
+        running_loudness_loss = 0.0
         logging.info("Epoch {}/{}".format(ep, epoch_num))
         for sample in track(train_audios_loader):
             global_step += 1
@@ -276,7 +278,7 @@ def main(configs):
                 prob,
                 label_vec,
                 decoded_msg,
-                msg,
+                msg
             )
 
             # Convert probabilities to binary values (0 or 1) using a threshold of 0.5
@@ -290,36 +292,38 @@ def main(configs):
             ber = bit_errors / total_bits
 
             sum_loss = (
-                losses[0] + losses[1] + losses[2] + losses[3] + losses[4] + losses[5]
+                losses[0] + losses[1] + losses[2] + losses[3] + losses[4] + losses[5] + losses[6]
             )
 
             sum_loss.backward()
             en_de_op.step()
 
             running_l1_loss += losses[0]
-            running_binary_cross_entropy_loss += losses[1]
+            running_bce_loss += losses[1]
             running_perceptual_loss += losses[2]
             # running_smoothness_loss += losses[3]
             running_freq_loss += losses[4]
             running_decode_bce += losses[5]
             running_ber += ber
+            running_loudness_loss += losses[6]
 
             if step % show_circle == 0:
                 logging.info("-" * 100)
                 logging.info(
                     "training_step:{} - l1_loss:{:.8f} - bce_loss:{:.8f} - "
-                    "perceptual_loss:{:.8f} - freq_loss:{:.8f} - decode_bce_loss:{:.8f} - BER:{:.8f}".format(
-                        step, losses[0], losses[1], losses[2], losses[4], losses[5], ber
+                    "perceptual_loss:{:.8f} - freq_loss:{:.8f} - decode_bce_loss:{:.8f} - BER:{:.8f} - loudness:{:.8f}".format(
+                        step, losses[0], losses[1], losses[2], losses[4], losses[5], ber, losses[6]
                     )
                 )
 
         train_l1_loss = running_l1_loss / len(train_audios_loader)
-        train_bce_loss = running_binary_cross_entropy_loss / len(train_audios_loader)
+        train_bce_loss = running_bce_loss / len(train_audios_loader)
         train_perceptual_loss = running_perceptual_loss / len(train_audios_loader)
         # train_smoothness_loss = running_smoothness_loss / len(train_audios_loader)
         train_freq_loss = running_freq_loss / len(train_audios_loader)
         train_decode_bce = running_decode_bce / len(train_audios_loader)
         train_ber = running_ber / len(train_audios_loader)
+        train_loudness_loss = running_loudness_loss / len(train_audios_loader)
 
         train_total_loss = (
             train_l1_loss
@@ -327,11 +331,12 @@ def main(configs):
             + train_perceptual_loss
             + train_freq_loss
             + train_decode_bce
+            + train_loudness_loss
         )
         logging.info("train#" * 60)
         logging.info(
             "train_epoch:{} - l1_loss:{:.8f} - bce_loss:{:.8f} - perceptual_loss:{:.8f} - "
-            "freq_loss:{:.8f} - decode_bce:{:.8f} - BER:{:.8f} - total_loss:{:.8f}".format(
+            "freq_loss:{:.8f} - decode_bce:{:.8f} - BER:{:.8f} - loudness_loss:{:.8f} - total_loss:{:.8f}".format(
                 ep,
                 train_l1_loss,
                 train_bce_loss,
@@ -339,6 +344,7 @@ def main(configs):
                 train_freq_loss,
                 train_decode_bce,
                 train_ber,
+                train_loudness_loss,
                 train_total_loss,
             )
         )
@@ -350,6 +356,7 @@ def main(configs):
             "train/train_freq_loss": train_freq_loss,
             "train/train_decode_bce": train_decode_bce,
             "train/train_BER": train_ber,
+            "train/train_loudness_loss": train_loudness_loss,
             "train/train_total_loss": train_total_loss,
         }
 
@@ -381,6 +388,7 @@ def main(configs):
             running_decode_bce = 0.0
             running_ber = 0.0
             running_freq_loss = 0.0
+            running_loudness_loss = 0.0
             for sample in track(val_audios_loader):
                 # ------------------- generate watermark
                 orig_wav_matrix = sample["matrix"].to(device)
@@ -411,7 +419,7 @@ def main(configs):
                     prob,
                     label_vec,
                     decoded_msg,
-                    msg,
+                    msg
                 )
 
                 # Convert probabilities to binary values (0 or 1) using a threshold of 0.5
@@ -431,6 +439,7 @@ def main(configs):
                 running_freq_loss += losses[4]
                 running_decode_bce = losses[5]
                 running_ber += ber
+                running_loudness_loss += losses[6]
 
             val_l1_loss = running_l1_loss / len(val_audios_loader)
             val_bce_loss = running_bce / len(val_audios_loader)
@@ -439,8 +448,9 @@ def main(configs):
             val_freq_loss = running_freq_loss / len(val_audios_loader)
             val_decode_bce = running_decode_bce / len(val_audios_loader)
             val_ber = running_ber / len(val_audios_loader)
+            val_loudness_loss = running_loudness_loss / len(val_audios_loader)
             val_total_loss = (
-                val_l1_loss + val_bce_loss + val_perceptual_loss + val_freq_loss + val_decode_bce
+                val_l1_loss + val_bce_loss + val_perceptual_loss + val_freq_loss + val_decode_bce + val_loudness_loss
             )
 
             val_metrics = {
@@ -450,6 +460,7 @@ def main(configs):
                 "val/val_freq_loss": val_freq_loss,
                 "val/val_BER": val_ber,
                 "val/val_decode_bce": val_decode_bce,
+                "val/val_loudness_loss": val_loudness_loss,
                 "val/val_total_loss": val_total_loss,
             }
 
@@ -579,7 +590,7 @@ def main(configs):
             logging.info("eval#" * 60)
             logging.info(
                 "eval_epoch:{} - l1_loss:{:.8f} - bce_loss:{:.8f} - perceptual_loss:{:.8f} - "
-                "freq_loss:{:.8f} - decode_bce:{:.8f} - BER:{:.8f} - total_loss:{:.8f}".format(
+                "freq_loss:{:.8f} - decode_bce:{:.8f} - BER:{:.8f} - loudness_loss:{:.8f} - total_loss:{:.8f}".format(
                     ep,
                     val_l1_loss,
                     val_bce_loss,
@@ -587,6 +598,7 @@ def main(configs):
                     val_freq_loss,
                     val_decode_bce,
                     val_ber,
+                    val_loudness_loss,
                     val_total_loss,
                 )
             )
@@ -602,6 +614,7 @@ def main(configs):
         # running_smoothness_loss = 0.0
         running_decode_bce = 0.0
         running_ber = 0.0
+        running_loudness_loss = 0.0
         total_steps = (len(dev_audios_loader.dataset) + batch_size - 1) // batch_size
         interval = total_steps / train_config["iter"]["test_record_num"]
         for step, sample in enumerate(track(dev_audios_loader)):
@@ -632,7 +645,7 @@ def main(configs):
                 prob,
                 label_vec,
                 decoded_msg,
-                msg,
+                msg
             )
 
             # Convert probabilities to binary values (0 or 1) using a threshold of 0.5
@@ -649,9 +662,10 @@ def main(configs):
             running_bce_loss += losses[1]
             running_perceptual_loss += losses[2]
             # running_smoothness_loss += losses[3]
+            running_freq_loss += losses[4]
             running_decode_bce += losses[5]
             running_ber += ber
-            running_freq_loss += losses[4]
+            running_loudness_loss += losses[6]
 
             if step % interval == 0:
 
@@ -784,8 +798,9 @@ def main(configs):
         test_freq_loss = running_freq_loss / len(dev_audios_loader)
         test_decode_bce = running_decode_bce / len(dev_audios_loader)
         test_ber = running_ber / len(dev_audios_loader)
+        test_loudness_loss = running_loudness_loss / len(dev_audios_loader)
         test_total_loss = (
-            test_l1_loss + test_bce_loss + test_perceptual_loss + test_freq_loss
+            test_l1_loss + test_bce_loss + test_perceptual_loss + test_freq_loss + test_decode_bce + test_loudness_loss
         )
 
         test_loss_summary_table.add_data(
@@ -795,7 +810,8 @@ def main(configs):
             test_freq_loss,
             test_decode_bce,
             test_ber,
-            test_total_loss,
+            test_loudness_loss,
+            test_total_loss
         )
 
         wandb.log(
@@ -807,13 +823,14 @@ def main(configs):
         logging.info("test#" * 20)
         logging.info(
             "test l1_loss:{:.8f} - BCE_loss:{:.8f} - perceptual_loss:{:.8f} - "
-            "freq_loss:{:.8f} - decode_bec:{:.8f} - BER:{:.8f} - total_loss:{:.8f}".format(
+            "freq_loss:{:.8f} - decode_bec:{:.8f} - BER:{:.8f} - loudness_loss:{:.8f} - total_loss:{:.8f}".format(
                 test_l1_loss,
                 test_bce_loss,
                 test_perceptual_loss,
                 test_freq_loss,
                 test_decode_bce,
                 test_ber,
+                test_loudness_loss,
                 test_total_loss,
             )
         )

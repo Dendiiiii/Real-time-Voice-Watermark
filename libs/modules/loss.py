@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from audiotools import AudioSignal
 
 
 # Approximated Fletcher-Munson curve
@@ -99,6 +100,7 @@ class Loss(nn.Module):
         # grad_penalty_loss = gradient_penalty_loss(wm)*0.001
         smoothness_loss = 0  # tvl_loss + grad_penalty_loss
         freq_loss = frequency_domain_loss(x, w_x)
+        loudness_loss = AudioSignal(x).loudness() - AudioSignal(wm).loudness()
 
         return (
             hybrid_loss_value * 0,
@@ -107,4 +109,5 @@ class Loss(nn.Module):
             smoothness_loss,
             freq_loss * 0,
             decode_bce_loss,
+            loudness_loss
         )
