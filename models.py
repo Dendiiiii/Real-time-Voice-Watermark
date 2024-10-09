@@ -366,7 +366,10 @@ class WatermarkDetector(torch.nn.Module):
             x = julius.resample_frac(x, old_sr=sample_rate, new_sr=16000)
         orig_length = x.shape[-1]
         x_spect = self.stft(x).permute(0, 3, 1, 2)
+        print("orig_length:", orig_length)
+        print("x_spect size:", x_spect.size())
         result = self.detector(x_spect)[..., :orig_length]  # b x 2+nbits x length
+        print("result shape:", result.size())
         result[:, :2, :] = torch.softmax(result[:, :2, :], dim=1)  # Apply softmax
         message = self.decode_message(result[:, 2:, :])  # Decode the message
         return result[:, :2, :], message
