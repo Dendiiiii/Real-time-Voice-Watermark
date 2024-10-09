@@ -115,5 +115,5 @@ class Loss(nn.Module):
             smoothness_loss,
             freq_loss * 0,
             decode_bce_loss,
-            loudness_loss,
+            loudness_loss * 0.1,
         )
