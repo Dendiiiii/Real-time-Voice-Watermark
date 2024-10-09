@@ -301,14 +301,8 @@ def main(configs):
                 + losses[6]
             )
 
-            print(f"L1 Loss: {losses[0]}")
-            print(f"BCE Loss: {losses[1]}")
-            print(f"Perceptual Loss: {losses[2]}")
-            print(f"Frequency Loss: {losses[4]}")
-            print(f"Decode BCE Loss: {losses[5]}")
-            print(f"Loudness Loss: {losses[6]}")
-            print(f"Total Loss: {sum_loss}")
-
+            print(f"Memory Allocated: {torch.cuda.memory_allocated() / 1024 ** 2} MB")
+            print(f"Memory Reserved: {torch.cuda.memory_reserved() / 1024 ** 2} MB")
             sum_loss.backward()
             en_de_op.step()
 
