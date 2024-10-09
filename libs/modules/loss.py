@@ -14,7 +14,7 @@ def fletcher_munson_weights(freqs):
     )
 
 
-def perceptual_loss(watermark, sample_rate=16000):
+def perceptual_loss(watermark, sample_rate):
     # Compute the FFT of the watermark
     watermark_fft = torch.fft.fft(watermark)
 
@@ -88,19 +88,19 @@ class Loss(nn.Module):
         self.l1_loss = nn.L1Loss()
         self.l2_loss = nn.MSELoss()
 
-    def en_de_loss(self, x, w_x, wm, prob, labels, decoded_msg, message):
+    def en_de_loss(self, x, w_x, wm, prob, labels, decoded_msg, message, sample_rate=16000):
         # 从小数点到db level做mse, regularizer
         bce_loss = self.bce_loss(prob[:, 0, :], labels)
         decode_bce_loss = self.bce_loss(decoded_msg, message)
         l1_loss = self.l1_loss(w_x, x)
         l2_loss = self.l2_loss(w_x, x)
         hybrid_loss_value = self.alpha * l1_loss + self.beta * l2_loss
-        percep_loss = perceptual_loss(wm)
+        percep_loss = perceptual_loss(wm, sample_rate)
         # tvl_loss = tv_loss(wm)*0.1
         # grad_penalty_loss = gradient_penalty_loss(wm)*0.001
         smoothness_loss = 0  # tvl_loss + grad_penalty_loss
         freq_loss = frequency_domain_loss(x, w_x)
-        loudness_loss = AudioSignal(x).loudness() - AudioSignal(wm).loudness()
+        loudness_loss = AudioSignal(x, sample_rate).loudness() - AudioSignal(wm, sample_rate).loudness()
 
         return (
             hybrid_loss_value * 0,
