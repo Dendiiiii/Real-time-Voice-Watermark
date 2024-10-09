@@ -91,7 +91,6 @@ class Loss(nn.Module):
     def en_de_loss(
         self, x, w_x, wm, prob, labels, decoded_msg, message, sample_rate=16000
     ):
-        print(f"Input shape: {prob[:, 0, :].shape}, Target shape: {labels.shape}")
         # 从小数点到db level做mse, regularizer
         bce_loss = self.bce_loss(prob[:, 0, :], labels)
         decode_bce_loss = self.bce_loss(decoded_msg, message)
