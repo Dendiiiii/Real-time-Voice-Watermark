@@ -1,7 +1,6 @@
 import os
 
 import soundfile
-import yaml
 from rich.progress import track
 from torch.utils.data import DataLoader
 
@@ -100,12 +99,12 @@ def main(configs):
             )
 
 
-if __name__ == "__main__":
-    process_config = yaml.load(
-        open(r"./config/process.yaml", "r"), Loader=yaml.FullLoader
-    )
-    model_config = yaml.load(open(r"./config/model.yaml", "r"), Loader=yaml.FullLoader)
-    train_config = yaml.load(open(r"./config/train.yaml", "r"), Loader=yaml.FullLoader)
-    configs = (process_config, model_config, train_config)
-    main(configs)
-    torch.cuda.empty_cache()
+# if __name__ == "__main__":
+#     process_config = yaml.load(
+#         open(r"./config/process.yaml", "r"), Loader=yaml.FullLoader
+#     )
+#     model_config = yaml.load(open(r"./config/model.yaml", "r"), Loader=yaml.FullLoader)
+#     train_config = yaml.load(open(r"./config/train.yaml", "r"), Loader=yaml.FullLoader)
+#     configs = (process_config, model_config, train_config)
+#     main(configs)
+#     torch.cuda.empty_cache()

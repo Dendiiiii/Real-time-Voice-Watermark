@@ -6,7 +6,7 @@ from urllib.parse import urlparse  # noqa: F401
 import julius
 import numpy as np
 
-from libs.modules.seanet import *
+from libs.modules.convs import *
 
 logger = logging.getLogger("VoiceWatermark")
 

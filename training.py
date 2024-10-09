@@ -4,6 +4,7 @@ from itertools import chain
 
 import matplotlib
 import matplotlib.pyplot as plt
+import torchaudio
 import yaml
 from rich.progress import track
 from torch.optim import AdamW
@@ -14,7 +15,6 @@ from dataset.data import collate_fn
 from dataset.data import wav_dataset as my_dataset
 from Distortions.distortions import *
 from libs.modules.loss import Loss
-from libs.modules.segmentation import *
 from models import *
 
 matplotlib.use("Agg")  # Use a non-interactive backend
@@ -49,14 +49,16 @@ def select_random_chunk(audio_data, percentage=1.0):
         chunk_length = int(total_length * percentage)
 
         # Correct randint usage for selecting a start_point
-        start_point = torch.randint(0, total_length - chunk_length + 1, (1,), device=audio_data.device).item()
+        start_point = torch.randint(
+            0, total_length - chunk_length + 1, (1,), device=audio_data.device
+        ).item()
 
         end_point = start_point + chunk_length
 
         # Create the label vector for selected sequence
         # mask the first 2.05s sample to be zero (unwatermarked)
         # 2.05s * 16000 = 32800
-        label_vector[i, start_point+32800:end_point] = 1
+        label_vector[i, start_point + 32800 : end_point] = 1
 
         # Select the audio using the label vector
         selected_audio = audio_data[i, start_point:end_point]
@@ -90,8 +92,6 @@ def substitute_watermarked_audio(wav_matrix, watermarked_wav, label_vector):
 def main(configs):
     logging.info("main function")
     process_config, model_config, train_config = configs
-    prev_step = 0
-    test_mode = True
 
     # ------------------- get train dataset
     train_audios = my_dataset(
@@ -278,7 +278,7 @@ def main(configs):
                 prob,
                 label_vec,
                 decoded_msg,
-                msg
+                msg,
             )
 
             # Convert probabilities to binary values (0 or 1) using a threshold of 0.5
@@ -292,9 +292,14 @@ def main(configs):
             ber = bit_errors / total_bits
 
             sum_loss = (
-                losses[0] + losses[1] + losses[2] + losses[3] + losses[4] + losses[5] + losses[6]
+                losses[0]
+                + losses[1]
+                + losses[2]
+                + losses[3]
+                + losses[4]
+                + losses[5]
+                + losses[6]
             )
-
             sum_loss.backward()
             en_de_op.step()
 
@@ -312,7 +317,14 @@ def main(configs):
                 logging.info(
                     "training_step:{} - l1_loss:{:.8f} - bce_loss:{:.8f} - "
                     "perceptual_loss:{:.8f} - freq_loss:{:.8f} - decode_bce_loss:{:.8f} - BER:{:.8f} - loudness:{:.8f}".format(
-                        step, losses[0], losses[1], losses[2], losses[4], losses[5], ber, losses[6]
+                        step,
+                        losses[0],
+                        losses[1],
+                        losses[2],
+                        losses[4],
+                        losses[5],
+                        ber,
+                        losses[6],
                     )
                 )
 
@@ -419,7 +431,7 @@ def main(configs):
                     prob,
                     label_vec,
                     decoded_msg,
-                    msg
+                    msg,
                 )
 
                 # Convert probabilities to binary values (0 or 1) using a threshold of 0.5
@@ -450,7 +462,12 @@ def main(configs):
             val_ber = running_ber / len(val_audios_loader)
             val_loudness_loss = running_loudness_loss / len(val_audios_loader)
             val_total_loss = (
-                val_l1_loss + val_bce_loss + val_perceptual_loss + val_freq_loss + val_decode_bce + val_loudness_loss
+                val_l1_loss
+                + val_bce_loss
+                + val_perceptual_loss
+                + val_freq_loss
+                + val_decode_bce
+                + val_loudness_loss
             )
 
             val_metrics = {
@@ -645,7 +662,7 @@ def main(configs):
                 prob,
                 label_vec,
                 decoded_msg,
-                msg
+                msg,
             )
 
             # Convert probabilities to binary values (0 or 1) using a threshold of 0.5
@@ -800,7 +817,12 @@ def main(configs):
         test_ber = running_ber / len(dev_audios_loader)
         test_loudness_loss = running_loudness_loss / len(dev_audios_loader)
         test_total_loss = (
-            test_l1_loss + test_bce_loss + test_perceptual_loss + test_freq_loss + test_decode_bce + test_loudness_loss
+            test_l1_loss
+            + test_bce_loss
+            + test_perceptual_loss
+            + test_freq_loss
+            + test_decode_bce
+            + test_loudness_loss
         )
 
         test_loss_summary_table.add_data(
@@ -811,7 +833,7 @@ def main(configs):
             test_decode_bce,
             test_ber,
             test_loudness_loss,
-            test_total_loss
+            test_total_loss,
         )
 
         wandb.log(
