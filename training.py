@@ -153,11 +153,13 @@ def main(configs):
             "test_bce_loss",
             "test_perceptual_loss",
             "test_freq_loss",
+            "test_decode_bce"
             "test_ber",
             "test_loudness_loss",
             "test_total_loss",
         ]
     )
+
 
     encoder = SimpleEncoder()
     decoder = SimpleDecoder()
