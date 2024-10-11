@@ -103,12 +103,11 @@ class Loss(nn.Module):
         smoothness_loss = 0  # tvl_loss + grad_penalty_loss
         freq_loss = frequency_domain_loss(x, w_x)
 
-        loudness_loss = 0.0
-
-        # loudness_loss = (
-        #     AudioSignal(x.unsqueeze(1), sample_rate).loudness()
-        #     - AudioSignal(wm.unsqueeze(1), sample_rate).loudness()
-        # ).mean()
+        # loudness_loss = 0.0
+        loudness_loss = (
+            AudioSignal(x.unsqueeze(1), sample_rate).loudness()
+            - AudioSignal(wm.unsqueeze(1), sample_rate).loudness()
+        ).mean()
 
         return (
             hybrid_loss_value * 0,

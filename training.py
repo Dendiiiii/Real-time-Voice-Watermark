@@ -249,8 +249,6 @@ def main(configs):
                 wav_matrix = orig_wav_matrix
 
             label_vec, selected_wav_matrix = select_random_chunk(wav_matrix)
-            print("label_vec size: ", label_vec.size())
-            print("selected_wav_matrix size: ", selected_wav_matrix.size())
 
             msg = torch.randint(
                 0,
@@ -261,7 +259,6 @@ def main(configs):
             watermarked_wav, wm = wm_generator(
                 selected_wav_matrix, message=msg
             )  # (B, L)
-            print("watermarked_wav size:", watermarked_wav.size())
             # watermarked_wav  # Add random distortion
             # if random.random() < 0.5:
             #     watermarked_wav = distortions(watermarked_wav,  random.choice(all_distortions))
@@ -272,7 +269,6 @@ def main(configs):
 
             # prob, decoded_msg = wm_detector(substituted_wav_matrix)
             prob, decoded_msg = wm_detector(watermarked_wav)
-            print("prob size: ", prob.size())
 
             losses = loss.en_de_loss(
                 selected_wav_matrix,

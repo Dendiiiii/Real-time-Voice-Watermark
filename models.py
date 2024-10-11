@@ -293,7 +293,7 @@ class WatermarkDetector(torch.nn.Module):
         self.n_fft = n_fft
         self.hop_length = hop_length
         self.nbits = nbits
-        last_layer = nn.Conv1d(1, 2 + nbits, 1)
+        last_layer = nn.Conv1d(32, 2 + nbits, 1)
         self.detector = nn.Sequential(detector, last_layer)
 
     def detect_watermark(
@@ -364,12 +364,7 @@ class WatermarkDetector(torch.nn.Module):
         assert sample_rate
         if sample_rate != 16000:
             x = julius.resample_frac(x, old_sr=sample_rate, new_sr=16000)
-        orig_length = x.shape[-1]
-        x_spect = self.stft(x).permute(0, 3, 1, 2)
-        print("orig_length:", orig_length)
-        print("x_spect size:", x_spect.size())
-        result = self.detector(x_spect)[..., :orig_length]  # b x 2+nbits x length
-        print("result shape:", result.size())
+        result = self.detector(x)  # b x 2+nbits x length
         result[:, :2, :] = torch.softmax(result[:, :2, :], dim=1)  # Apply softmax
         message = self.decode_message(result[:, 2:, :])  # Decode the message
         return result[:, :2, :], message
