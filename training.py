@@ -867,4 +867,5 @@ if __name__ == "__main__":
     model_config = yaml.load(open(r"./config/model.yaml", "r"), Loader=yaml.FullLoader)
     train_config = yaml.load(open(r"./config/train.yaml", "r"), Loader=yaml.FullLoader)
     configs = (process_config, model_config, train_config)
+    torch.cuda.empty_cache()
     main(configs)

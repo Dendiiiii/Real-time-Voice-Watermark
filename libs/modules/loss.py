@@ -101,18 +101,18 @@ class Loss(nn.Module):
         # tvl_loss = tv_loss(wm)*0.1
         # grad_penalty_loss = gradient_penalty_loss(wm)*0.001
         smoothness_loss = 0  # tvl_loss + grad_penalty_loss
-        freq_loss = 0
-        # freq_loss = frequency_domain_loss(x, w_x)
+        # freq_loss = 0
+        freq_loss = frequency_domain_loss(x, w_x)
 
-        # loudness_loss = 0.0
-        try:
-            loudness_loss = (
-                    AudioSignal(x.unsqueeze(1), sample_rate).loudness()
-                    - AudioSignal(wm.unsqueeze(1), sample_rate).loudness()
-            ).mean()
-        except Exception as e:
-            print(f"Loudness loss calculation error: {e}")
-            loudness_loss = torch.tensor(0.0).to(x.device)
+        loudness_loss = 0.0
+        # try:
+        #     loudness_loss = (
+        #             AudioSignal(x.unsqueeze(1), sample_rate).loudness()
+        #             - AudioSignal(wm.unsqueeze(1), sample_rate).loudness()
+        #     ).mean()
+        # except Exception as e:
+        #     print(f"Loudness loss calculation error: {e}")
+        #     loudness_loss = torch.tensor(0.0).to(x.device)
 
         return (
             hybrid_loss_value * 0,
