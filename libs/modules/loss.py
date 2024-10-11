@@ -101,7 +101,8 @@ class Loss(nn.Module):
         # tvl_loss = tv_loss(wm)*0.1
         # grad_penalty_loss = gradient_penalty_loss(wm)*0.001
         smoothness_loss = 0  # tvl_loss + grad_penalty_loss
-        freq_loss = frequency_domain_loss(x, w_x)
+        freq_loss = 0
+        # freq_loss = frequency_domain_loss(x, w_x)
 
         # loudness_loss = 0.0
         try:
@@ -118,7 +119,7 @@ class Loss(nn.Module):
             bce_loss,
             percep_loss * 0.035,
             smoothness_loss,
-            freq_loss * 0,
+            freq_loss,
             decode_bce_loss,
             loudness_loss * 0.1,
         )
