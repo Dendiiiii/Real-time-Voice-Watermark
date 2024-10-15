@@ -185,7 +185,6 @@ def main(configs):
 
     decoder = SimpleDecoder()
     detector = SimpleDetector()
-
     distortions = distortion()
 
     wm_generator = WatermarkModel(
@@ -320,6 +319,15 @@ def main(configs):
             )
 
             sum_loss.backward()
+            # Gradient monitoring code goes here
+            for name, param in wm_generator.named_parameters():
+                if param.grad is not None:
+                    logging.info("Epoch{} | Generator Layer: {} | Gradient Norm: {}".format(ep, name, param.grad.norm()))
+
+            for name, param in wm_detector.named_parameters():
+                if param.grad is not None:
+                    logging.info("Epoch{} | Detector Layer: {} | Gradient Norm: {}".format(ep, name, param.grad.norm()))
+
             en_de_op.step()
 
             running_l1_loss += losses[0]
