@@ -125,7 +125,15 @@ def main(configs):
         config={
             "learning_rate": train_config["optimize"]["lr"],
             "dataset": "LibriSpeech",
+            "future_amt": train_config["future_amt"],
+            "future_amt_waveform": train_config["future_amt_waveform"],
+            "nbits": train_config["watermark"]["nbits"],
+            "use_embedding":train_config["watermark"]["use_embedding"],
             "epochs": train_config["iter"]["epoch"],
+            "save_circle": train_config["iter"]["save_circle"],
+            "show_circle": train_config["iter"]["show_circle"],
+            "val_circle": train_config["iter"]["val_circle"],
+            "test_record_num": train_config["iter"]["test_record_num"],
         },
     )
     val_audio_table = wandb.Table(
@@ -162,7 +170,7 @@ def main(configs):
         ]
     )
 
-    if not train_config["watermark"]["embedding"]:
+    if not train_config["watermark"]["use_embedding"]:
         msgprocessor = MsgProcessor(
             nbits=train_config["watermark"]["nbits"], hidden_size=1
         ).to(device)

@@ -16,7 +16,7 @@ future_amt_waveform: 8000
 watermark:
   length: 10
   nbits: 16
-  embedding: True
+  use_embedding: True
 
 optimize:
   lr: 0.00002

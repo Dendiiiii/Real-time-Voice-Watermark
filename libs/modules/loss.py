@@ -6,38 +6,36 @@ from audiotools import AudioSignal
 
 # Approximated Fletcher-Munson curve
 def fletcher_munson_weights(freqs):
-    freqs = np.maximum(freqs, 1e-6)
-    return (
-        3.64 * (freqs / 1000) ** -0.8
-        - 6.5 * np.exp(-0.6 * (freqs / 1000 - 3.3) ** 2)
-        + (10**-3) * (freqs / 1000) ** 4
-    )
+    # Ensure frequencies are at least 1e-6 to avoid division by zero
+    freqs = freqs.clamp(min=1e-6)
+    freq_ratio = freqs / 1000
+    term1 = 3.64 * freq_ratio.pow(-0.8)
+    term2 = -6.5 * torch.exp(-0.6 * (freq_ratio - 3.3).pow(2))
+    term3 = 1e-3 * freq_ratio.pow(4)
+    return term1 + term2 + term3
 
 
 def perceptual_loss(watermark, sample_rate):
     # Compute the FFT of the watermark
-    watermark_fft = torch.fft.fft(watermark)
+    watermark_fft = torch.fft.rfft(watermark)
 
     # Generate frequencies corresponding to FFT components
-    freqs = torch.fft.fftfreq(watermark_fft.size(-1), d=1 / sample_rate).to(
-        watermark.device
-    )
+    freqs = torch.fft.rfftfreq(watermark_fft.size(-1), d=1 / sample_rate).to(watermark.device)
 
     # Calculate weights based on human ear sensitivity
-    weights = torch.tensor(fletcher_munson_weights(freqs.cpu().numpy())).to(
-        watermark.device
-    )
+    weights = fletcher_munson_weights(freqs)
 
-    # Ensure weights are non-negative (if there are any negative weights, set them to a small positive value)
-    weights = torch.clamp(weights, min=1e-6)
+    # Ensure weights are non-negative (in-place operation)
+    weights.clamp_(min=1e-6)
 
     # Apply weights to the magnitude of FFT components
-    weighted_magnitude = torch.abs(watermark_fft) * weights
+    weighted_magnitude = torch.abs(watermark_fft)
+    weighted_magnitude.mul_(weights)
 
     # Calculate the perceptual loss (sum of weighted magnitudes)
-    loss = torch.sum(weighted_magnitude)
+    loss = weighted_magnitude.sum()
 
-    return torch.log(1 + loss)
+    return torch.log1p(loss)
 
 
 # The Total Variation Loss
@@ -96,8 +94,8 @@ class Loss(nn.Module):
         decode_bce_loss = self.bce_loss(decoded_msg, message)
         l1_loss = self.l1_loss(w_x, x)
         l2_loss = self.l2_loss(w_x, x)
-        hybrid_loss_value = self.alpha * l1_loss + self.beta * l2_loss
-        percep_loss = 0  # perceptual_loss(wm, sample_rate)
+        hybrid_loss_value = 0 # self.alpha * l1_loss + self.beta * l2_loss
+        percep_loss = perceptual_loss(wm, sample_rate)
         # tvl_loss = tv_loss(wm)*0.1
         # grad_penalty_loss = gradient_penalty_loss(wm)*0.001
         smoothness_loss = 0  # tvl_loss + grad_penalty_loss
@@ -115,11 +113,11 @@ class Loss(nn.Module):
         #     loudness_loss = torch.tensor(0.0).to(x.device)
 
         return (
-            hybrid_loss_value * 0,
+            hybrid_loss_value,   # No
             bce_loss,
             percep_loss * 0.035,
-            smoothness_loss,
+            smoothness_loss,  # No
             freq_loss,
             decode_bce_loss,
-            loudness_loss * 0.1,
+            loudness_loss,
         )
