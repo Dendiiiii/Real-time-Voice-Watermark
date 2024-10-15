@@ -1,6 +1,7 @@
 import math
 import typing as tp
 import warnings
+
 import numpy as np
 import torch
 from torch import nn
@@ -79,6 +80,24 @@ def pad1d(
         return padded[..., :end]
     else:
         return F.pad(x, paddings, mode, value)
+
+
+class LinearNorm(nn.Module):
+    """LinearNorm Projection"""
+
+    def __init__(self, in_features, out_features, bias=False, spectral_norm=False):
+        super(LinearNorm, self).__init__()
+        self.linear = nn.Linear(in_features, out_features, bias)
+
+        nn.init.xavier_uniform_(self.linear.weight)
+        if bias:
+            nn.init.constant_(self.linear.bias, 0.0)
+        if spectral_norm:
+            self.linear = nn.utils.spectral_norm(self.linear)
+
+    def forward(self, x):
+        x = self.linear(x)
+        return x
 
 
 class NormConv1d(nn.Module):
@@ -244,15 +263,16 @@ class UpConvBlock(nn.Module):
 
 
 class SimpleEncoder(nn.Module):
-    def __init__(self, dimension: int = 512):
+    def __init__(self, input_channels: int = 2, dimension: int = 512):
         super(SimpleEncoder, self).__init__()
+        self.input_channels = input_channels
         self.ch1 = 64
         self.ch2 = 128
         self.ch3 = 256
         self.dimension = dimension
 
         model = [
-            nn.Sequential(DownConvBlock(2, self.ch1, 5, (2, 2))),
+            nn.Sequential(DownConvBlock(input_channels, self.ch1, 5, (2, 2))),
             nn.Sequential(
                 DownConvBlock(self.ch1, self.ch2, 5, (2, 2)),
                 DownConvBlock(self.ch2, self.ch2, 5, (2, 2)),

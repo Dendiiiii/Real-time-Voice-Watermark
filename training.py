@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import torchaudio
 import yaml
 from rich.progress import track
+from torch.nn import LeakyReLU
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 
@@ -160,14 +161,21 @@ def main(configs):
         ]
     )
 
+    if not train_config["watermark"]["embedding"]:
+        msgprocessor = MsgProcessor(
+            nbits=train_config["watermark"]["nbits"], hidden_size=1
+        ).to(device)
+        encoder = SimpleEncoder(input_channels=2)
+    else:
+        msgprocessor = MsgEmbedder(
+            msg_length=train_config["watermark"]["nbits"],
+            win_dim=int(process_config["mel"]["n_fft"] / 2) + 1,
+            activation=LeakyReLU(inplace=True),
+        )
+        encoder = SimpleEncoder(input_channels=3)
 
-    encoder = SimpleEncoder()
     decoder = SimpleDecoder()
     detector = SimpleDetector()
-
-    msgprocessor = MsgProcessor(
-        nbits=train_config["watermark"]["nbits"], hidden_size=1
-    ).to(device)
 
     distortions = distortion()
 

@@ -5,10 +5,51 @@ from urllib.parse import urlparse  # noqa: F401
 
 import julius
 import numpy as np
+import torch
 
 from libs.modules.convs import *
 
 logger = logging.getLogger("VoiceWatermark")
+
+
+class MsgEmbedder(nn.Module):
+    """
+    Fully Connected Block to create message embedding.
+
+    Args:
+        msg_length: input_channels. Number of bits used to generate the message. Must be non-zero
+        win_dim: Dimension of the message embedding. win_dim = int((self.n_fft / 2) + 1)
+    """
+
+    def __init__(
+        self,
+        msg_length: int,
+        win_dim: int,
+        activation=None,
+        bias=False,
+        dropout=None,
+        spectral_norm=False,
+    ):
+        super(MsgEmbedder, self).__init__()
+        self.fc_layer = nn.Sequential()
+        self.fc_layer.add_module(
+            "fc_layer",
+            LinearNorm(
+                msg_length,
+                win_dim,
+                bias,
+                spectral_norm,
+            ),
+        )
+        if activation is not None:
+            self.fc_layer.add_module("activ", activation)
+        self.dropout = dropout
+
+    def forward(self, x):
+        x = self.fc_layer(x)
+        if self.dropout is not None:
+            x = F.dropout(x, self.dropout, self.training)
+        return x
 
 
 class MsgProcessor(torch.nn.Module):
@@ -94,45 +135,66 @@ class WatermarkModel(torch.nn.Module):
 
     def get_watermark(
         self,
-        x: torch.Tensor,
+        x_spect: torch.Tensor,
         sample_rate: Optional[int] = 16000,
         message: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
         Get the watermark from an audio tensor.
         Args:
-            x: Audio signal, size: batch x frames
+            x_spect: Audio spectrogram, size: (batch, 2, freq_bins, frames)
             sample_rate: The sample rate of input audio (default 16khz as
                 currently supported by the main model)
             message: An optional binary message, size: batch x k
         """
-        if sample_rate is None:
-            logger.warning("No sample rate input, setting it to be 16khz")
-            sample_rate = 16_000
-        assert sample_rate
-        if sample_rate != 16000:
-            x = julius.resample_frac(x, old_sr=sample_rate, new_sr=16000)
-        hidden = self.encoder(x)
-        hidden = hidden.reshape(x.shape[0], 1, 512)
-
-        if self.msg_processor is not None:
-            if message is None:
-                if self.message is None:
-                    message = torch.randint(
-                        0, 2, (x.shape[0], self.msg_processor.nbits), device=x.device
-                    )
+        # msg_length = self.msg_processor.nbits
+        # message (batch, 1, k)
+        # after linear (batch, 1, win_dim)
+        # reshape to (batch, 1, win_dim, 1)
+        # repeat to (batch, 1, win_dim, 204)
+        # x_spect (batch, 2, win_dim, 204)
+        if self.encoder.input_channels == 2:
+            hidden = self.encoder(x_spect)
+            hidden = hidden.reshape(x_spect.shape[0], 1, 512)
+            if self.msg_processor is not None:
+                if message is None:
+                    if self.message is None:
+                        message = torch.randint(
+                            0,
+                            2,
+                            (x_spect.shape[0], self.msg_processor.nbits),
+                            device=x_spect.device,
+                        )
+                    else:
+                        message = self.message.to(device=x_spect.device)
                 else:
-                    message = self.message.to(device=x.device)
-            else:
-                message = message.to(device=x.device)
-            hidden = self.msg_processor(hidden, message)
+                    message = message.to(device=x_spect.device)
+                hidden = self.msg_processor(hidden, message)
 
-        watermark = self.decoder(hidden)
-
-        if sample_rate != 16000:
-            watermark = julius.resample_frac(
-                watermark, old_sr=16000, new_sr=sample_rate
+            watermark = self.decoder(hidden)
+        else:
+            message = message.unsqueeze(1)
+            message_embeddings = (
+                self.msg_processor(message)
+                .transpose(1, 2)
+                .unsqueeze(1)
+                .repeat(1, 1, 1, x_spect.size(-1))
             )
+            # Create a copy of the repeated matrix to store the rotated results
+            watermark_encoded_shifted = message_embeddings.clone()
+
+            # Loop over each of the 500 vectors and apply an incremental rotate down shift
+            for i in range(message_embeddings.size(-1)):
+                # Apply a roll (shift) along the third dimension
+                watermark_encoded_shifted[:, :, :, i] = torch.roll(
+                    message_embeddings[:, :, :, i], shifts=(i + 1), dims=2
+                )
+            # (batch, 2, freq_bins, frames) -> (batch, 3, freq_bins, frames)
+            x_spect = torch.concat((x_spect, watermark_encoded_shifted), dim=1)
+            del message_embeddings
+            hidden = self.encoder(x_spect)
+            hidden = hidden.reshape(x_spect.shape[0], 1, 512)
+            watermark = self.decoder(hidden)
         return watermark
 
     # def pad_w_zeros_stft(
@@ -201,15 +263,6 @@ class WatermarkModel(torch.nn.Module):
         tmp = torch.view_as_real(tmp)
         return tmp
 
-    # def istft(self, x):
-    #     # Convert from (real, imag) to complex
-    #     x_contiguous = x.contiguous()
-    #     x_complex = torch.view_as_complex(x_contiguous)
-    #     window = torch.hann_window(self.n_fft).to(x.device)
-    #     # Inverse STFT to reconstruct the time-domain signal
-    #     x_reconstructed = torch.istft(x_complex, n_fft=self.n_fft, hop_length=self.hop_length, window=window)
-    #     return x_reconstructed
-
     def forward(
         self,
         x: torch.Tensor,
@@ -249,13 +302,6 @@ class WatermarkModel(torch.nn.Module):
                 * torch.max(torch.abs(x), dim=1)[0].unsqueeze(1)
                 * watermark_wav
             )
-            # # [b, freq_bins, time_frames, 2] -> [b, 2, freq_bins, time_frames]
-            # all_watermark_stft = self.stft(all_watermark_wav).permute(0, 3, 1, 2)
-            # actual_watermark_stft = self.pad_w_zeros_stft(x_spect, all_watermark_stft)
-            # mask = x_spect != 0
-            #
-            # wm_stft = (actual_watermark_stft * mask + 0.0000001).permute(0, 2, 3, 1)
-            # wm = self.istft(wm_stft)
             actual_watermark_wav = self.pad_w_zeros_wv(x, all_watermark_wav)
             mask = x != 0
 
@@ -334,18 +380,6 @@ class WatermarkDetector(torch.nn.Module):
         ), f"Expect message of size [,{self.nbits}, frames] (get {result.size()})"
         decoded_message = result.mean(dim=-1)
         return torch.sigmoid(decoded_message)
-
-    def stft(self, x):
-        window = torch.hann_window(self.n_fft).to(x.device)
-        tmp = torch.stft(
-            x,
-            n_fft=self.n_fft,
-            hop_length=self.hop_length,
-            window=window,
-            return_complex=True,
-        )
-        tmp = torch.view_as_real(tmp)
-        return tmp
 
     def forward(
         self,
