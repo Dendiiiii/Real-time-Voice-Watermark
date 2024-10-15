@@ -1,4 +1,5 @@
 import datetime
+import math
 import os
 from itertools import chain
 
@@ -643,7 +644,7 @@ def main(configs):
         running_ber = 0.0
         running_loudness_loss = 0.0
         total_steps = (len(dev_audios_loader.dataset) + batch_size - 1) // batch_size
-        interval = total_steps / train_config["iter"]["test_record_num"]
+        interval = math.ceil(total_steps / train_config["iter"]["test_record_num"])
         for step, sample in enumerate(track(dev_audios_loader)):
             orig_wav_matrix = sample["matrix"].to(device)
             if True:
