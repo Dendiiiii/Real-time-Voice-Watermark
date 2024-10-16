@@ -111,7 +111,7 @@ class Loss(nn.Module):
         l1_loss = self.l1_loss(w_x, x)
         l2_loss = self.l2_loss(w_x, x)
         hybrid_loss_value = 0 # self.alpha * l1_loss + self.beta * l2_loss
-        percep_loss = perceptual_loss(wm, sample_rate)
+        percep_loss = 0  # perceptual_loss(wm, sample_rate)
         # tvl_loss = tv_loss(wm)*0.1
         # grad_penalty_loss = gradient_penalty_loss(wm)*0.001
         smoothness_loss = 0  # tvl_loss + grad_penalty_loss
@@ -131,7 +131,7 @@ class Loss(nn.Module):
         return (
             hybrid_loss_value,   # No
             bce_loss,
-            percep_loss * 0.035,
+            percep_loss * 0.035,  # No
             smoothness_loss,  # No
             freq_loss,
             decode_bce_loss,
