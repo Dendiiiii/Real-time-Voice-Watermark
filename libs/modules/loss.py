@@ -16,25 +16,30 @@ def fletcher_munson_weights(freqs):
 
 
 def perceptual_loss(watermark, sample_rate):
-    # Compute the FFT of the watermark
-    watermark_fft = torch.fft.rfft(watermark)
+    # Compute the real FFT of the watermark over the last dimension
+    watermark_fft = torch.fft.rfft(watermark, dim=-1)
 
     # Generate frequencies corresponding to FFT components
-    freqs = torch.fft.rfftfreq(watermark_fft.size(-1), d=1 / sample_rate).to(watermark.device)
+    freqs = torch.fft.rfftfreq(watermark.size(-1), d=1 / sample_rate).to(watermark.device)
 
     # Calculate weights based on human ear sensitivity
     weights = fletcher_munson_weights(freqs)
-
-    # Ensure weights are non-negative (in-place operation)
     weights.clamp_(min=1e-6)
 
     # Apply weights to the magnitude of FFT components
     weighted_magnitude = torch.abs(watermark_fft)
-    weighted_magnitude.mul_(weights)
 
-    # Calculate the perceptual loss (sum of weighted magnitudes)
-    loss = weighted_magnitude.sum()
+    # Reshape weights to be broadcastable with weighted_magnitude
+    weights = weights.view(*([1] * (weighted_magnitude.dim() - 1)), -1)
 
+    # Multiply (broadcasting weights across batch and other dimensions)
+    weighted_magnitude = weighted_magnitude * weights
+
+    # Calculate the perceptual loss (sum over the frequency dimension)
+    loss = weighted_magnitude.sum(dim=-1)
+
+    # If there's a batch dimension, you may want to average over the batch
+    loss = loss.mean()
     return torch.log1p(loss)
 
 
