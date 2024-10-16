@@ -16,9 +16,19 @@ def fletcher_munson_weights(freqs):
 
 
 def perceptual_loss(watermark, sample_rate):
-    print(watermark.size())
+
+    # Verify input tensor
+    if torch.isnan(watermark).any() or torch.isinf(watermark).any():
+        raise ValueError("Input tensor contains NaNs or Infs.")
+
     # Compute the real FFT of the watermark over the last dimension
-    watermark_fft = torch.fft.rfft(watermark, dim=-1)
+    try:
+        watermark_fft = torch.fft.rfft(watermark, dim=-1)
+    except RuntimeError as e:
+        print("FFT failed on GPU, attempting on CPU...")
+        watermark_cpu = watermark.cpu()
+        watermark_fft = torch.fft.rfft(watermark_cpu, dim=-1)
+        watermark_fft = watermark_fft.to(watermark.device)
 
     # Generate frequencies corresponding to FFT components
     freqs = torch.fft.rfftfreq(watermark.size(-1), d=1 / sample_rate).to(watermark.device)
