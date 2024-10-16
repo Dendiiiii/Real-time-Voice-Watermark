@@ -16,6 +16,7 @@ def fletcher_munson_weights(freqs):
 
 
 def perceptual_loss(watermark, sample_rate):
+    print(watermark.size())
     # Compute the real FFT of the watermark over the last dimension
     watermark_fft = torch.fft.rfft(watermark, dim=-1)
 
