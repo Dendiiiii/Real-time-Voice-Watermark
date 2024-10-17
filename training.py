@@ -33,7 +33,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(message)s",
 )
-device = torch.device("cuda:7" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def select_random_chunk(audio_data, percentage=1.0):
@@ -123,12 +123,14 @@ def main(configs):
         project="real-time-voice-watermark",
         name="full_run_20_epoch",
         config={
-            "learning_rate": train_config["optimize"]["lr"],
             "dataset": "LibriSpeech",
+            "data_size": "Half",
+            "batch_size": train_config["optimize"]["batch_size"],
+            "learning_rate": train_config["optimize"]["lr"],
             "future_amt": train_config["future_amt"],
             "future_amt_waveform": train_config["future_amt_waveform"],
             "nbits": train_config["watermark"]["nbits"],
-            "use_embedding":train_config["watermark"]["use_embedding"],
+            "use_embedding": train_config["watermark"]["use_embedding"],
             "epochs": train_config["iter"]["epoch"],
             "save_circle": train_config["iter"]["save_circle"],
             "show_circle": train_config["iter"]["show_circle"],
@@ -235,6 +237,7 @@ def main(configs):
     lambda_e = train_config["optimize"]["lambda_e"]
     lambda_m = train_config["optimize"]["lambda_m"]
     global_step = 0
+    max_grad_norm = 1.0  # Choose a maximum gradient norm value (tune as necessary)
     for ep in range(1, epoch_num + 1):
         wm_generator.train()
         wm_detector.train()
@@ -322,11 +325,25 @@ def main(configs):
             # Gradient monitoring code goes here
             for name, param in wm_generator.named_parameters():
                 if param.grad is not None:
-                    logging.info("Epoch{} | Generator Layer: {} | Gradient Norm: {}".format(ep, name, param.grad.norm()))
+                    logging.info(
+                        "Epoch{} | Generator Layer: {} | Gradient Norm: {}".format(
+                            ep, name, param.grad.norm()
+                        )
+                    )
 
             for name, param in wm_detector.named_parameters():
                 if param.grad is not None:
-                    logging.info("Epoch{} | Detector Layer: {} | Gradient Norm: {}".format(ep, name, param.grad.norm()))
+                    logging.info(
+                        "Epoch{} | Detector Layer: {} | Gradient Norm: {}".format(
+                            ep, name, param.grad.norm()
+                        )
+                    )
+
+            # Apply gradient clipping to both models
+            torch.nn.utils.clip_grad_norm_(
+                chain(wm_generator.parameters(), wm_detector.parameters()),
+                max_grad_norm,
+            )
 
             en_de_op.step()
 

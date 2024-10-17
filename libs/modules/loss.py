@@ -23,6 +23,7 @@ def perceptual_loss(watermark, sample_rate):
 
     # Compute the real FFT of the watermark over the last dimension
     try:
+        print("FFT execution on GPU!")
         watermark_fft = torch.fft.rfft(watermark, dim=-1)
     except RuntimeError as e:
         print("FFT failed on GPU, attempting on CPU...")
@@ -31,7 +32,9 @@ def perceptual_loss(watermark, sample_rate):
         watermark_fft = watermark_fft.to(watermark.device)
 
     # Generate frequencies corresponding to FFT components
-    freqs = torch.fft.rfftfreq(watermark.size(-1), d=1 / sample_rate).to(watermark.device)
+    freqs = torch.fft.rfftfreq(watermark.size(-1), d=1 / sample_rate).to(
+        watermark.device
+    )
 
     # Calculate weights based on human ear sensitivity
     weights = fletcher_munson_weights(freqs)
@@ -110,7 +113,7 @@ class Loss(nn.Module):
         decode_bce_loss = self.bce_loss(decoded_msg, message)
         l1_loss = self.l1_loss(w_x, x)
         l2_loss = self.l2_loss(w_x, x)
-        hybrid_loss_value = 0 # self.alpha * l1_loss + self.beta * l2_loss
+        hybrid_loss_value = 0  # self.alpha * l1_loss + self.beta * l2_loss
         percep_loss = 0  # perceptual_loss(wm, sample_rate)
         # tvl_loss = tv_loss(wm)*0.1
         # grad_penalty_loss = gradient_penalty_loss(wm)*0.001
@@ -129,11 +132,11 @@ class Loss(nn.Module):
         #     loudness_loss = torch.tensor(0.0).to(x.device)
 
         return (
-            hybrid_loss_value,   # No
+            hybrid_loss_value,  # No
             bce_loss,
             percep_loss * 0.035,  # No
             smoothness_loss,  # No
             freq_loss,
             decode_bce_loss,
-            loudness_loss,
+            loudness_loss,  # No
         )
