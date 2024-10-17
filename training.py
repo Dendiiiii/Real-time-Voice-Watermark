@@ -33,7 +33,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(message)s",
 )
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:7" if torch.cuda.is_available() else "cpu")
 
 
 def select_random_chunk(audio_data, percentage=1.0):
