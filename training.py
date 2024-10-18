@@ -125,7 +125,7 @@ def main(configs):
         name="full_run_20_epoch",
         config={
             "dataset": "LibriSpeech",
-            "data_size": "1/7",
+            "data_size": "1/10",
             "batch_size": train_config["optimize"]["batch_size"],
             "learning_rate": train_config["optimize"]["lr"],
             "future_amt": train_config["future_amt"],
