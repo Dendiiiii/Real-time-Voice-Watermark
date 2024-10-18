@@ -113,8 +113,8 @@ class wav_dataset(Dataset):
             else:
                 print("The length of {} is shorter than 2.55s".format(audio_name))
 
-        # # Optionally, load only half of the dataset
-        # self.valid_wavs = random.sample(self.valid_wavs, len(self.valid_wavs) // 2)
+        # Optionally, load only half of the dataset
+        self.valid_wavs = random.sample(self.valid_wavs, len(self.valid_wavs) // 7)
 
     def __len__(self):
         return len(self.valid_wavs)

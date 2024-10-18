@@ -3,6 +3,7 @@ import math
 import os
 from itertools import chain
 
+import GPUtil
 import matplotlib
 import matplotlib.pyplot as plt
 import torchaudio
@@ -124,7 +125,7 @@ def main(configs):
         name="full_run_20_epoch",
         config={
             "dataset": "LibriSpeech",
-            "data_size": "Half",
+            "data_size": "1/7",
             "batch_size": train_config["optimize"]["batch_size"],
             "learning_rate": train_config["optimize"]["lr"],
             "future_amt": train_config["future_amt"],
@@ -355,6 +356,17 @@ def main(configs):
             running_decode_bce += losses[5]
             running_ber += ber
             running_loudness_loss += losses[6]
+
+            # Log GPU-specific metrics for the seventh GPU
+            gpu_stats = GPUtil.getGPUs()[7]  # Index 7 for the seventh GPU
+            wandb.log(
+                {
+                    "GPU_Usage": gpu_stats.load * 100,  # GPU utilization in percentage
+                    "GPU_Memory_Free": gpu_stats.memoryFree,  # Free memory in MB
+                    "GPU_Memory_Used": gpu_stats.memoryUsed,  # Used memory in MB
+                    "GPU_Temperature": gpu_stats.temperature,  # GPU temperature in Celsius
+                }
+            )
 
             if step % show_circle == 0:
                 logging.info("-" * 100)
